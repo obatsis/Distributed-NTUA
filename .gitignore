@@ -1,5 +1,6 @@
 random/
 distr/
+distrib_lab_code/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
