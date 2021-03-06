@@ -18,7 +18,7 @@ def home():
 	if request.method == 'POST':
 		result = request.form.to_dict()
 
-		print(result["id"])
+		print(result["rid"])
 		print(result["val"])
 
 		return str(int(result["val"])+1)

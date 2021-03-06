@@ -7,14 +7,19 @@ address = 'http://localhost:5000/cli'
 def main(argv):
 
 	dat = {
-		"rid" : "none",
+		"rid" : "",
 		"val": 123
 	}
 
-	# for i in range(100):
-	# 	response = requests.get(address)
-	# 	if response.status_code == 200:
-	# 		print("ALL GOOD")
+	response = requests.get(address)
+	if response.status_code == 200:
+		print("ALL GOOD")
+	print(response.text)
+
+	response = requests.post('http://localhost:5000/', data = dat)
+	if response.status_code == 200:
+		print("	ALL GOOD")
+	print("response text: {}" .format(response.text))
 
 	response = requests.post(address, data = dat)
 	print("response url: {}" .format(response.url))
@@ -26,7 +31,7 @@ def main(argv):
 	print("response elapsed: {}" .format(response.elapsed))
 	# print("response content: {}" .format(response.content))
 	print("closing connection to server")
-	response.close()	
+	response.close()
 	dat["rid"] = "net_overlay"
 	response = requests.post(address, data = dat)
 	print("response url: {}" .format(response.url))
