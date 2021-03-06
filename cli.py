@@ -2,7 +2,7 @@ import sys
 import requests
 
 
-address = 'http://localhost:5000/cli'
+address = 'http://localhost:5000/'
 
 def main(argv):
 
@@ -11,65 +11,50 @@ def main(argv):
 		"val": 123
 	}
 
+	# info check test
 	response = requests.get(address)
+	print("status code: {}" .format(response.status_code), end =" ")
 	if response.status_code == 200:
-		print("ALL GOOD")
-	print(response.text)
+		print("			ALL GOOD")
+		print("response: {}" .format(response.text))
 
-	response = requests.post('http://localhost:5000/', data = dat)
+	# net overlay test
+	response = requests.get(address + "cli/overlay")
+	print("status code: {}" .format(response.status_code), end =" ")
 	if response.status_code == 200:
-		print("	ALL GOOD")
-	print("response text: {}" .format(response.text))
+		print("		ALL GOOD")
+		print("response: {}" .format(response.text))
 
-	response = requests.post(address, data = dat)
-	print("response url: {}" .format(response.url))
-	print("response status code: {}" .format(response.status_code), end =" ")
+	response = requests.post(address + "chord/insert", data = dat)
+	print("status code: {}" .format(response.status_code), end =" ")
 	if response.status_code == 200:
-		print("	ALL GOOD")
-	print("response text: {}" .format(response.text))
-	# print("response headers: {}" .format(response.headers))
-	print("response elapsed: {}" .format(response.elapsed))
-	# print("response content: {}" .format(response.content))
-	print("closing connection to server")
-	response.close()
-	dat["rid"] = "net_overlay"
-	response = requests.post(address, data = dat)
-	print("response url: {}" .format(response.url))
-	print("response status code: {}" .format(response.status_code), end =" ")
-	if response.status_code == 200:
-		print("	ALL GOOD")
-	print("response text: {}" .format(response.text))
-	# print("response headers: {}" .format(response.headers))
-	print("response elapsed: {}" .format(response.elapsed))
-	# print("response content: {}" .format(response.content))
-	print("closing connection to server")
-	response.close()
-	dat["rid"] = "insert"
-	response = requests.post(address, data = dat)
-	print("response url: {}" .format(response.url))
-	print("response status code: {}" .format(response.status_code), end =" ")
-	if response.status_code == 200:
-		print("	ALL GOOD")
-	print("response text: {}" .format(response.text))
-	# print("response headers: {}" .format(response.headers))
-	print("response elapsed: {}" .format(response.elapsed))
-	# print("response content: {}" .format(response.content))
-	print("closing connection to server")
-	response.close()
-	dat["rid"] = "delete"
-	response = requests.post(address, data = dat)
-	print("response url: {}" .format(response.url))
-	print("response status code: {}" .format(response.status_code), end =" ")
-	if response.status_code == 200:
-		print("	ALL GOOD")
-	print("response text: {}" .format(response.text))
-	# print("response headers: {}" .format(response.headers))
-	print("response elapsed: {}" .format(response.elapsed))
-	# print("response content: {}" .format(response.content))
-	print("closing connection to server")
-	response.close()
+		print("		ALL GOOD")
+		print("response: {}" .format(response.text))
 
 
+	response = requests.post(address + "chord/delete", data = dat)
+	print("status code: {}" .format(response.status_code), end =" ")
+	if response.status_code == 200:
+		print("		ALL GOOD")
+		print("response: {}" .format(response.text))
+
+	response = requests.post(address + "chord/query", data = dat)
+	print("status code: {}" .format(response.status_code), end =" ")
+	if response.status_code == 200:
+		print("		ALL GOOD")
+		print("response: {}" .format(response.text))
+
+
+	response = requests.get(address+"/over")	#intentionally in order to produce an error
+
+
+	# print("response url: {}" .format(response.url))
+	# print("response text: {}" .format(response.text))
+	# print("response headers: {}" .format(response.headers))
+	# print("response elapsed: {}" .format(response.elapsed))
+	# print("response content: {}" .format(response.content))
+	# print("closing connection to server")
+	# response.close()
 
 
 
