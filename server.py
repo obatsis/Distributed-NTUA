@@ -12,15 +12,10 @@ counter = 0
 rcnt = 0
 address = 'http://localhost:'
 
-# here we must have a list or something to save the next and prev Node
-# we must save both ip and port in order to be compatible with the vms when the time comes
-global boot, my_ip, my_id, nids, mids
-mids = []
-nids = []
+
 @app.route('/',methods = ['GET'])												# root directory (basically system info and οτι αλλο προκυψει)
 def home():
 	global counter
-	# global boot, my_ip, my_id, nids, mids
 	if request.method == 'GET':
 		counter += 1
 		print("-- Just got a GET request and local cnt is: {}".format(counter))
@@ -81,13 +76,24 @@ def node_update():
 
 @app.route('/boot/join',methods = ['POST'])										# join(nodeID)
 def boot_join():
-	result = request.form.to_dict()
-	candidate_id
-	print(yellow(result["uid"]) + "  wants to join the Chord")
-	for ids in mids:
-		pass
-	return "OK BRO"
-
+	if boot:
+		new_node = request.form.to_dict()
+		candidate_id = new_node["uid"]
+		print(yellow(candidate_id) + "  wants to join the Chord with ip:port " + yellow(new_node["ip"] + ":" + new_node["port"]))
+		for idx, ids in enumerate(mids):
+			if candidate_id < ids["uid"]:
+				mids.insert(idx, new_node)
+				break
+			elif idx == len(mids)-1:
+				mids.append(new_node)
+				break
+		print(mids)
+		new_node_idx = mids.index(new_node)
+		print("new node possition in mids: " + str(new_node_idx))
+		# we must return strings probably....i dont know...
+		# and we have to find the bug bellow
+		# return mids[new_node_idx-1] if new_node_idx >= 1 else mids[-1] + " " + mids[new_node_idx+1] if new_node_idx < len(mids)-1 else mids[0]
+		return "ok"
 
 @app.route('/boot/depart',methods = ['POST'])									# depart(nodeID)
 def boot_depart():
@@ -107,28 +113,35 @@ if __name__ == '__main__':
 		print("!! you must tell me the port. Ex. -p 5000 !!")
 		exit(0)
 	if sys.argv[1] in ("-p", "-P"):
-		op_port = sys.argv[2]
+		my_port = sys.argv[2]
 	my_ip = os.popen('ip addr show ' + config.NETIFACE + ' | grep "\<inet\>" | awk \'{ print $2 }\' | awk -F "/" \'{ print $1 }\'').read().strip()
 	if len(sys.argv) == 4 and sys.argv[3] in ("-b", "-B"):
-		print("I am the Bootstrap Node with ip: " + yellow(my_ip) + " about to run a Flask server on port "+ yellow(op_port))
-		print("and my unique id is: " + green(hash(my_ip + op_port)))
+		print("I am the Bootstrap Node with ip: " + yellow(my_ip) + " about to run a Flask server on port "+ yellow(my_port))
+		my_id = hash(my_ip + my_port)
+		print("and my unique id is: " + green(my_id))
 		boot = True
-		mids.append(my_id)	#boot is the first one to enter the list
+		# mids["uid"] = my_id	#boot is the first one to enter the list
+		# mids["ip"] = my_ip	#boot is the first one to enter the list
+		# mids["port"] = my_port	#boot is the first one to enter the list
+		mids.append({"uid":my_id, "ip":my_ip, "port":my_port})	#boot is the first one to enter the list
 	else:
 		boot = False
-		print("I am a normal Node with ip: " + yellow(my_ip) + " about to run a Flask server on port "+ yellow(op_port))
-		my_id = hash(my_ip + op_port)
+		print("I am a normal Node with ip: " + yellow(my_ip) + " about to run a Flask server on port "+ yellow(my_port))
+		my_id = hash(my_ip + my_port)
 		print("and my unique id is: " + green(my_id))
 		print(yellow("\natempting to join the Chord..."))
 		try:
-			response = requests.post(config.ADDR + config.BOOTSTRAP_IP + ":" + config.BOOTSTRAP_PORT + "/boot/join", data = {"uid" : my_id})
+			response = requests.post(config.ADDR + config.BOOTSTRAP_IP + ":" + config.BOOTSTRAP_PORT + "/boot/join", data = {"uid" : my_id, "ip": my_ip, "port" : my_port})
 			if response.status_code == 200:
 				print(response.text)
-
+			else:
+				print("Something went wrong!!  status code: " + red(response.status.code))
+				print(red("\nexiting..."))
+				exit(0)
 		except:
 			print(red("\nSomething went wrong!! (check if bootstrap is up and running)"))
 			print(red("\nexiting..."))
 			exit(0)
 
 	print("\n\n")
-	app.run(host= my_ip, port=op_port,debug = True, use_reloader=False)
+	app.run(host= my_ip, port=my_port,debug = True, use_reloader=False)
