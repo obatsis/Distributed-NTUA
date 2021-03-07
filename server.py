@@ -5,7 +5,7 @@ from flask import Flask, request
 import requests
 from  api import *
 import config
-from utils.beautyfy import *
+from utils.colorfy import *
 app = Flask(__name__)
 messages={}
 counter = 0
@@ -14,13 +14,13 @@ address = 'http://localhost:'
 
 # here we must have a list or something to save the next and prev Node
 # we must save both ip and port in order to be compatible with the vms when the time comes
+global boot, my_ip, my_id, nids, mids
 mids = []
 nids = []
-
 @app.route('/',methods = ['GET'])												# root directory (basically system info and οτι αλλο προκυψει)
 def home():
 	global counter
-	global boot, my_ip, my_id, nids, mids
+	# global boot, my_ip, my_id, nids, mids
 	if request.method == 'GET':
 		counter += 1
 		print("-- Just got a GET request and local cnt is: {}".format(counter))
@@ -28,7 +28,7 @@ def home():
 
 # xreiazontai 2 endpoints gia joint dioti o 1os komvos tha einai blocked apo to
 #join tou cli...opote oi  komvoi metaksi tous tha prepei na milane me allo endpoint gia to overlay
-@app.route('/cli/overlay',methods = ['GET'])							# cli (client) operations network overlay
+@app.route('/cli/overlay',methods = ['GET'])							# cli (client) operation network overlay
 def cli_over():
 	print("got request for net overlay")
 	# if request.host == "localhost:5000":
@@ -43,6 +43,9 @@ def cli_over():
 	else:
 		return request.host
 
+@app.route('/cli/depart',methods = ['GET'])										# cli (client) operation depart
+def cli_depart():
+	pass
 
 @app.route('/chord/overlay',methods = ['GET'])									# chord operation network overlay
 def chord_over():
@@ -71,18 +74,29 @@ def chord_query():
 		print("got request for query value {}".format(result["val"]))
 		return "queried " + result["val"]
 
+# when a node departs, master has to update everyone with their new neighbours
+@app.route('/node/update',methods = ['POST'])									# update(nodeID)
+def node_update():
+	pass
+
 @app.route('/boot/join',methods = ['POST'])										# join(nodeID)
 def boot_join():
-	if request.method == 'POST':
+	result = request.form.to_dict()
+	candidate_id
+	print(yellow(result["uid"]) + "  wants to join the Chord")
+	for ids in mids:
 		pass
+	return "OK BRO"
+
 
 @app.route('/boot/depart',methods = ['POST'])									# depart(nodeID)
 def boot_depart():
 	if request.method == 'POST':
 		pass
+
 @app.before_first_request
 def initialize():
-    print("Called only once, when the first request comes in")
+    print(blue(" TEST this gets called only once, when the first request comes in"))
 
 def hash(key):
 	return hashlib.sha1(key.encode('utf-8')).hexdigest()
@@ -99,6 +113,7 @@ if __name__ == '__main__':
 		print("I am the Bootstrap Node with ip: " + yellow(my_ip) + " about to run a Flask server on port "+ yellow(op_port))
 		print("and my unique id is: " + green(hash(my_ip + op_port)))
 		boot = True
+		mids.append(my_id)	#boot is the first one to enter the list
 	else:
 		boot = False
 		print("I am a normal Node with ip: " + yellow(my_ip) + " about to run a Flask server on port "+ yellow(op_port))
@@ -106,7 +121,7 @@ if __name__ == '__main__':
 		print("and my unique id is: " + green(my_id))
 		print(yellow("\natempting to join the Chord..."))
 		try:
-			response = requests.post(config.ADDR + config.BOOTSTRAP_IP + ":" + config.BOOTSTRAP_PORT + "/boot/join", data = my_id)
+			response = requests.post(config.ADDR + config.BOOTSTRAP_IP + ":" + config.BOOTSTRAP_PORT + "/boot/join", data = {"uid" : my_id})
 			if response.status_code == 200:
 				print(response.text)
 
