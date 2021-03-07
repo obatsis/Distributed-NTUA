@@ -42,7 +42,7 @@ def client():
                 'type': 'list',
                 'name': 'method',
                 'message': 'What would you like to do?',
-                'choices': ['Collect data from the Diavgeia OpenDataAPI', 'Search by ADA', 'Search by Date', 'Exit']
+                'choices': ['Collect data from the Diavgeia OpenDataAPI', 'Search by ADA', 'Search by Date', 'Kati allo','Exit']
             }]
         method_a = prompt(method_q, style=style)['method']
         os.system('cls||clear')
