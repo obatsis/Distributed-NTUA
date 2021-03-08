@@ -117,7 +117,7 @@ if __name__ == '__main__':
 	my_ip = os.popen('ip addr show ' + config.NETIFACE + ' | grep "\<inet\>" | awk \'{ print $2 }\' | awk -F "/" \'{ print $1 }\'').read().strip()
 	if len(sys.argv) == 4 and sys.argv[3] in ("-b", "-B"):
 		print("I am the Bootstrap Node with ip: " + yellow(my_ip) + " about to run a Flask server on port "+ yellow(my_port))
-		my_id = hash(my_ip + my_port)
+		my_id = hash(my_ip + ":" + my_port)
 		print("and my unique id is: " + green(my_id))
 		boot = True
 		# mids["uid"] = my_id	#boot is the first one to enter the list
@@ -127,7 +127,7 @@ if __name__ == '__main__':
 	else:
 		boot = False
 		print("I am a normal Node with ip: " + yellow(my_ip) + " about to run a Flask server on port "+ yellow(my_port))
-		my_id = hash(my_ip + my_port)
+		my_id = hash(my_ip + ":" + my_port)
 		print("and my unique id is: " + green(my_id))
 		print(yellow("\natempting to join the Chord..."))
 		try:
@@ -145,3 +145,8 @@ if __name__ == '__main__':
 
 	print("\n\n")
 	app.run(host= my_ip, port=my_port,debug = True, use_reloader=False)
+
+{"uid": "123"
+ "ip": '127.0.0.1'
+ "port": '5000'
+}
