@@ -96,8 +96,6 @@ def cli_depart_func():
 			print(red("Cant realy do anything... I will wait"))
 			return "Encountered a problem while trying to leave the Chord...\n Check if Bootstrap is up and running"
 
-
-
 def boot_depart_func(d_node):
 	if globs.boot:
 		d_node_idx = globs.mids.index(d_node)
@@ -145,7 +143,6 @@ def boot_depart_func(d_node):
 			print(blue(d_node), end = '')
 			return "no"
 
-
 def node_update_list(new_neighbours):
 	globs.nids[0] = new_neighbours["prev"]
 	globs.nids[1] = new_neighbours["next"]
@@ -156,7 +153,6 @@ def node_update_list(new_neighbours):
 		print(yellow("NEW Next Node:"))
 		print(globs.nids[1])
 	return "new neighbours set"
-
 
 # End Node Functios
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -201,11 +197,10 @@ def node_overlay(r_node):
 def hash(key):
 	return hashlib.sha1(key.encode('utf-8')).hexdigest()
 
-def found(songs_list, key):
-	for item in songs_list:
-		if item[0] == key:
+def found(key):
+	for item in globs.songs:
+		if item['key'] == key:
 			return(item)
-
 
 def insert_song(args):
 	print(args) # args is a pair of (key,value)
@@ -215,23 +210,23 @@ def insert_song(args):
 	next_ID = globs.nids[1]["uid"]
 	self_ID = globs.my_id
 	if(hashed_key > previous_ID and hashed_key <= self_ID):
-		item = found(globs.songs, args["key"])
+		item = found(args["key"])
 		if(item): # update
 			globs.songs.remove(item)
 		globs.songs.append({"key":args["key"], "value":args["value"]}) # inserts the updated pair of (key,value)
 		if config.NDEBUG:
 			print('Updated!')
 			print(globs.songs)
-		return "Inserted by node" + self_ID
+		return self_ID
 	elif((hashed_key > self_ID and hashed_key > previous_ID) or (hashed_key < previous_ID and hashed_key <= self_ID)):
-		item = found(globs.songs, args["key"])
+		item = found(args["key"])
 		if(item): # update
 			globs.songs.remove(item)
 		globs.songs.append({"key":args["key"], "value":args["value"]}) # inserts the updated pair of (key,value)
 		if config.NDEBUG:
 			print('Updated!')
 			print(globs.songs)
-		return "Inserted by node" + self_ID
+		return self_ID
 	elif(hashed_key > self_ID or hashed_key < previous_ID):
 		if config.NDEBUG:
 			print('forwarding..')
@@ -241,7 +236,6 @@ def insert_song(args):
 		return result.text
 	print("Insersion from server is done!")
 
-
 def delete_song(args):
 	print(args) # args is a pair of (key,value)
 	hashed_key = hash(args["key"])
@@ -250,7 +244,7 @@ def delete_song(args):
 	self_ID = globs.my_id
 	command = 'delete'
 	if(hashed_key > previous_ID and hashed_key <= self_ID):
-		item = found(globs.songs, args["key"])
+		item = found(args["key"])
 		if(item):
 			globs.songs.remove(item)
 		if config.NDEBUG:
@@ -258,7 +252,7 @@ def delete_song(args):
 			print(globs.songs)
 		return "Removed by node" + self_ID
 	elif((hashed_key > self_ID and hashed_key > previous_ID) or (hashed_key < previous_ID and hashed_key <= self_ID)):
-		item = found(globs.songs, args["key"])
+		item = found(args["key"])
 		if(item):
 			globs.songs.remove(item)
 		if config.NDEBUG:
@@ -268,11 +262,10 @@ def delete_song(args):
 	elif(hashed_key > self_ID or hashed_key < previous_ID):
 		if config.NDEBUG:
 			print('forwarding..')
-		result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_delete, data = {"key":args["key"]})
+		result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_delete, data = {"key": args["key"]})
 		# req = requests.get(url = 'http://' + next_ID + '/delete', params = tuple_load)
 		return result.text
 	print("Deletion from server is done!")
-
 
 def query_song(args):
 	command = 'query'
@@ -281,20 +274,19 @@ def query_song(args):
 	self_ID = globs.my_id
 	if(globs.still_on_chord == False):
 		return 'NodeIsDown'
-	if(args["key"] == '*'): # θελει φτιαξιμο
-		# print(globs.songs)
-		return (json.dumps({'matrix_of_items':globs.songs}))
+	if(args["key"] == '*'):
+		return (json.dumps({'matrix_of_items':matrix_of_items}))
 	else:
 		hashed_key = hash(args["key"])
 		# δεν θεωρω οτι το id ειναι χασαρισμενο...
 		if(hashed_key > previous_ID and hashed_key < self_ID):
-			item = found(globs.songs, args["key"])
+			item = found(args["key"])
 			if config.NDEBUG:
 				print('It is found..')
 				print(item)
 			return json.dumps(item)
 		elif((hashed_key > self_ID and hashed_key > previous_ID) or (hashed_key < previous_ID and hashed_key <= self_ID)):
-			item = found(globs.songs, args["key"])
+			item = found(args["key"])
 			if config.NDEBUG:
 				print('It is found..')
 				print(item)
@@ -302,6 +294,7 @@ def query_song(args):
 		elif(hashed_key > self_ID or hashed_key < previous_ID):
 			if config.NDEBUG:
 				print('forwarding..')
-			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_query, data = {"key":args["key"]})
+			tuple_load = {"key":args["key"]}
+			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_query, data = tuple_load)
 			# req = requests.get(url = 'http://' + next_ID + '/query', params = tuple_load)
 			return result.text

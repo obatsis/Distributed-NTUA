@@ -42,7 +42,6 @@ def client(ip, port):
 					if response.text == "Left the Chord":
 						print(response.text)
 						print(green("Node is out of Toychord network"))
-						exit(0)
 					else:
 						print(red(response.text))
 				else :
@@ -50,8 +49,7 @@ def client(ip, port):
 			except:
 				print(red("Could not establish connection with Node. Node didnt depart..."))
 				print(red("Unfortunately exiting..."))
-				exit(0)
-			continue
+			break
 
 		elif method_a == 'Insert a Song':
 			print('Insert a Title-Value pair for the song you wish to insert')
@@ -74,7 +72,7 @@ def client(ip, port):
 			try:
 				response = requests.post(baseURL + ends.c_insert ,data={'key':fetch_a['key'],'value':fetch_a['value']})
 				if response.status_code == 200:
-					print(green(response.text))
+					print("Inserted by node with id ",green(response.text))
 				else :
 					print(red("Got a bad response status code " + response.status_code))
 			except:
@@ -122,8 +120,11 @@ def client(ip, port):
 			try:
 				response = requests.post(baseURL + ends.c_query ,data={'key':fetch_a['key']})
 				if response.status_code == 200:
-					print(green(response.text))
-				else :
+					if response.text in ("None","null"):
+						print("Song not found")
+					else:
+						print("Song found in node with id ",green(response.text))
+				else:
 					print(red("Got a bad response status code " + response.status_code))
 			except:
 				print(red("Could not establish connection with Node. Couldnt search for song..."))
@@ -131,7 +132,6 @@ def client(ip, port):
 				exit(0)
 
 			continue
-
 
 		elif method_a == 'Network Overlay':
 			print(yellow("Initiating Network Overlay..."))
@@ -172,7 +172,7 @@ def client(ip, port):
 			break
 
 		else:
-			break
+			continue
 
 if __name__ == '__main__':
 	if len(sys.argv) < 3:

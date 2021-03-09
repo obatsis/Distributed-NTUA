@@ -40,13 +40,13 @@ def cli_insert():
 def cli_delete():
 	pair = request.form.to_dict()
 	result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_delete, data = pair)
-	return result
+	return result.text
 
 @app.route(ends.c_query ,methods = ['POST'])										# cli (client) operation query
 def cli_query():
 	pair = request.form.to_dict()
-	result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ensd.n_query, data = pair)
-	return result
+	result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_query, data = pair)
+	return result.text
 
 @app.route(ends.n_overlay ,methods = ['POST'])									# chord operation network overlay
 def chord_over():
@@ -61,15 +61,13 @@ def chord_insert():
 
 @app.route(ends.n_delete ,methods = ['POST'])									# chord operation delete(key)
 def chord_delete():
-	if request.method == 'POST':
-		result = request.form.to_dict()
-		return delete_song(result)
+	result = request.form.to_dict()
+	return delete_song(result)
 
 @app.route(ends.n_query ,methods = ['POST'])									# chord operation query(key)
 def chord_query():
-	if request.method == 'POST':
-		result = request.form.to_dict()
-		return query_song(result)
+	result = request.form.to_dict()
+	return query_song(result)
 
 
 @app.route(ends.n_update_peers ,methods = ['POST'])									# update(nodeID)
