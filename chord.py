@@ -280,10 +280,11 @@ def query_song(args):
 	previous_ID = globs.nids[0]["uid"]
 	next_ID = globs.nids[1]["uid"]
 	self_ID = globs.my_id
-	if(node_in_chord == False):
+	if(globs.still_on_chord == False):
 		return 'NodeIsDown'
-	if(args["key"] == '*'):
-		return (json.dumps({'matrix_of_items':matrix_of_items}))
+	if(args["key"] == '*'): # θελει φτιαξιμο
+		# print(globs.songs)
+		return (json.dumps({'matrix_of_items':globs.songs}))
 	else:
 		hashed_key = hash(args["key"])
 		# δεν θεωρω οτι το id ειναι χασαρισμενο...
@@ -303,6 +304,6 @@ def query_song(args):
 			if config.NDEBUG:
 				print('forwarding..')
 			tuple_load = {"key":args["key"]}
-			result = requests.post(config.ADDR + globs.songs[1]["ip"] + ":" + globs.songs[1]["port"] + ends.n_query, data = tuple_load)
+			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_query, data = tuple_load)
 			# req = requests.get(url = 'http://' + next_ID + '/query', params = tuple_load)
 			return result.text
