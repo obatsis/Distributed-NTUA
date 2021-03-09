@@ -1,2 +1,0 @@
-# UltimateDistribution
-ToyChord implementation

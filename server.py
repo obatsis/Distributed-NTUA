@@ -8,85 +8,81 @@ from chord import *
 import config
 from utils.colorfy import *
 import globs
-import time
-
+import ends
 
 app = Flask(__name__)
 counter = 0
 rcnt = 0
-# address = 'http://localhost:'
 
-# global globs.my_id
-# global globs.my_ip
-# global globs.my_port
-
-# globs.my_id = 0
-# globs.my_ip = 0
-# globs.my_port = 0
 
 @app.route('/',methods = ['GET'])												# root directory (useless)
 def home():
 	return "my name is ToyChord"
 
 
-@app.route('/cli/info',methods = ['GET'])										# cli (client) operation info
+@app.route(ends.info ,methods = ['GET'])										# cli (client) operation info
 def cli_info():
 	return globs.my_id + " " + globs.my_ip + " " + globs.my_port
 
 
-@app.route('/cli/overlay',methods = ['GET'])									# cli (client) operation network overlay
+@app.route(ends.c_overlay ,methods = ['GET'])									# cli (client) operation network overlay
 def cli_over():
 	return client_overlay()
 
-@app.route('/cli/depart',methods = ['GET'])										# cli (client) operation depart
+@app.route(ends.c_depart ,methods = ['GET'])										# cli (client) operation depart
 def cli_depart():
-	pass
-@app.route('/cli/insert',methods = ['GET'])										# cli (client) operation insert
-def cli_insert():
-	pass
-@app.route('/cli/delete',methods = ['GET'])										# cli (client) operation delete
-def cli_delete():
-	pass
-@app.route('/cli/query',methods = ['GET'])										# cli (client) operation query
-def cli_query():
-	pass
+	return cli_depart_func()
 
-@app.route('/chord/overlay',methods = ['POST'])									# chord operation network overlay
+@app.route(ends.c_insert ,methods = ['POST'])										# cli (client) operation insert
+def cli_insert():
+	pair = request.form.to_dict()
+	result = request.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_insert, data = pair)
+	return result
+
+@app.route(ends.c_delete ,methods = ['POST'])										# cli (client) operation delete
+def cli_delete():
+	pair = request.form.to_dict()
+	result = request.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_delete, data = pair)
+	return result
+
+@app.route(ends.c_query ,methods = ['POST'])										# cli (client) operation query
+def cli_query():
+	pair = request.form.to_dict()
+	result = request.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ensd.n_query, data = pair)
+	return result
+
+@app.route(ends.n_overlay ,methods = ['POST'])									# chord operation network overlay
 def chord_over():
 	r_node = request.form.to_dict()
 	return node_overlay(r_node)
 
 
-@app.route('/chord/insert_song',methods = ['POST'])								# chord operation insert(key.value)
+@app.route(ends.n_insert ,methods = ['POST'])								# chord operation insert(key.value)
 def chord_insert():
 	if request.method == 'POST':
 		result = request.form.to_dict()
-		print("got request for insert value {}".format(result["val"]))
-		# return "inserted " + result["val"]
 		return insert_song(result)
 
-@app.route('/chord/delete_song',methods = ['POST'])									# chord operation delete(key)
+@app.route(ends.n_delete ,methods = ['POST'])									# chord operation delete(key)
 def chord_delete():
 	if request.method == 'POST':
 		result = request.form.to_dict()
-		print("got request for delete value {}".format(result["val"]))
-		return "deleted " + result["val"]
+		return delete_song(result)
 
-@app.route('/chord/query_song',methods = ['POST'])									# chord operation query(key)
+@app.route(ends.n_query ,methods = ['POST'])									# chord operation query(key)
 def chord_query():
 	if request.method == 'POST':
 		result = request.form.to_dict()
-		print("got request for query value {}".format(result["val"]))
-		return "queried " + result["val"]
+		return query_song(result)
 
 
-@app.route('/chord/updatePeersList',methods = ['POST'])									# update(nodeID)
+@app.route(ends.n_update_peers ,methods = ['POST'])									# update(nodeID)
 def chord_updateList():
 	new_neighbours = request.get_json()
 	return node_update_list(new_neighbours)
 
 
-@app.route('/boot/join',methods = ['POST'])										# join(nodeID)
+@app.route(ends.b_join ,methods = ['POST'])										# join(nodeID)
 def boot_join():
 	if globs.boot:
 		new_node = request.form.to_dict()
@@ -95,10 +91,11 @@ def boot_join():
 		print(red("You are not authorized to do this shitt...Therefore you are now DEAD"))
 		exit(0)
 
-@app.route('/boot/depart',methods = ['POST'])									# depart(nodeID)
+@app.route(ends.b_depart ,methods = ['POST'])									# depart(nodeID)
 def boot_depart():
-	# when a node departs, master has to update everyone with their new neighbours
-		pass
+	d_node = request.form.to_dict()
+	return boot_depart_func(d_node)
+
 
 # @app.before_first_request
 # def initialize():

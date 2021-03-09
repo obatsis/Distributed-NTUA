@@ -2,7 +2,7 @@ import sys
 import requests
 
 
-address = 'http://localhost:5000/'
+address = 'http://localhost:5003/'
 
 def main(argv):
 
@@ -21,9 +21,12 @@ def main(argv):
 	if response.status_code == 200:
 		print("		ALL GOOD")
 		print("response: {}" .format(response.text))
-		print("response url: {}" .format(response.url))
-		print(response.url.split("/")[2])
 
+	response = requests.get(address + "cli/depart")
+	print("status code: {}" .format(response.status_code), end =" ")
+	if response.status_code == 200:
+		print("		ALL GOOD")
+		print("response: {}" .format(response.text))
 
 	# response = requests.post(address + "chord/insert", data = dat)
 	# print("status code: {}" .format(response.status_code), end =" ")
@@ -48,6 +51,7 @@ def main(argv):
 	# response = requests.get(address+"/over")	#intentionally in order to produce an error
 
 
+	# print(response.url.split("/")[2])
 	# print("response url: {}" .format(response.url))
 	# print("response text: {}" .format(response.text))
 	# print("response headers: {}" .format(response.headers))

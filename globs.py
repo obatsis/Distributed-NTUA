@@ -10,3 +10,5 @@ global my_ip
 global my_port
 global started_overlay
 started_overlay = False
+global still_on_chord
+still_on_chord = True
