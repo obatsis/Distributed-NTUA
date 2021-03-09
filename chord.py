@@ -268,8 +268,7 @@ def delete_song(args):
 	elif(hashed_key > self_ID or hashed_key < previous_ID):
 		if config.NDEBUG:
 			print('forwarding..')
-		tuple_load = {"key":args["key"], "value":args["value"]}
-		result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_delete, data = tuple_load)
+		result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_delete, data = {"key": args["key"]})
 		# req = requests.get(url = 'http://' + next_ID + '/delete', params = tuple_load)
 		return result.text
 	print("Deletion from server is done!")
