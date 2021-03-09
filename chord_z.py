@@ -8,6 +8,7 @@ import werkzeug
 import requests
 import hashlib
 import config
+import globs
 from api import *
 from utils.beautyfy import *
 
@@ -25,17 +26,16 @@ def found(globs.songs, key):
         if item[0] == key:
             return(item)
 
-@app.route('/chord/insert', methods = ['POST'])
-def chord_insert():
+#@app.route('/chord/insert', methods = ['POST'])
+def chord_insert(args):
     if request.method == 'POST':
-        args = request.form.to_dict() # args is a pair of (key,value)
-        print(args)
+        # args = request.form.to_dict()
+        print(args) # args is a pair of (key,value)
         hashed_key = hash(args["key"])
         command = 'insert'
         previous_ID = globs.mids[0]["uid"]
         next_ID = globs.mids[1]["uid"]
         self_ID = globs.my_id
-        # δεν θεωρω οτι το id ειναι χασαρισμενο...
         if(hashed_key > previous_ID and hashed_key <= self_ID):
             item = found(globs.songs, args["key"])
             if(item): # update
@@ -60,17 +60,16 @@ def chord_insert():
             return result.content.decode("utf-8")
         print("Insersion from server is done!")
 
-@app.route('/chord/delete',methods = ['POST'])
-def chord_delete():
+#@app.route('/chord/delete',methods = ['POST'])
+def chord_delete(args):
     if request.method == 'POST':
-        args = request.form.to_dict() # args is a pair of (key,value)
-        print(args)
+        # args = request.form.to_dict()
+        print(args) # args is a pair of (key,value)
         hashed_key = hash(args["key"])
         previous_ID = globs.mids[0]["uid"]
         next_ID = globs.mids[1]["uid"]
         self_ID = globs.my_id
         command = 'delete'
-        # δεν θεωρω οτι το id ειναι χασαρισμενο...
         if(hashed_key > previous_ID and hashed_key <= self_ID):
             item = found(globs.songs, args["key"])
             if(item):
@@ -93,8 +92,8 @@ def chord_delete():
             return result.content.decode("utf-8")
         print("Deletion from server is done!")
 
-@app.route('/chord/query',methods = ['POST'])
-def chord_query():
+# @app.route('/chord/query',methods = ['POST'])
+def chord_query(args):
     if request.method == 'POST':
         args = request.form.to_dict()
         command = 'query'
@@ -124,18 +123,3 @@ def chord_query():
                 result = requests.post(config.ADDR + globs.songs[1]["ip"] + ":" + globs.songs[1]["port"] + "/chord/query", data = tuple_load)
                 # req = requests.get(url = 'http://' + next_ID + '/query', params = tuple_load)
                 return result.content.decode("utf-8")
-
-
-@app.route('/help', methods = ['GET'])
-def help():
-    help_dictionary = {'join': '-----',
-                       'depart': '-----',
-                       'insert': '-----',
-                       'delete': '-----',
-                       'query': '-----',
-                       'update': '-----',
-                       'overlay': '-----'}
-    print("Prints a helping message to the user")
-    print("+------------------------------------+")
-    print("+------------COMMAND LINE------------+")
-    print(help_dictionary)
