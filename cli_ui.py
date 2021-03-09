@@ -4,146 +4,181 @@ from PyInquirer import style_from_dict, Token, prompt
 import sys
 import ends
 import config
-
+from utils.colorfy import *
 style = style_from_dict({
 	Token.QuestionMark: '#E91E63 bold',
-    Token.Selected: '#673AB7 bold',
-    Token.Instruction: '#0bf416',
-    Token.Answer: '#2196f3 bold',
-    Token.Question: '#0bf416 bold',
+	Token.Selected: '#673AB7 bold',
+	Token.Instruction: '#0bf416',
+	Token.Answer: '#2196f3 bold',
+	Token.Question: '#0bf416 bold',
 })
 
-def red(string):
-  return '\033[1;91m {}\033[00m\n'.format(string)
-
-def yellow(string):
-  return '\033[1;93m {}\033[00m\n'.format(string)
-
 def client(ip, port):
-  os.system('cls||clear')
-  yellow('What a beautiful day to enter the cult...')
-  baseURL = 'http://' + ip + ':' + port
+	os.system('cls||clear')
+	yellow('What a beautiful day to enter the cult...')
+	baseURL = 'http://' + ip + ':' + port
 
-  while True:
-    print('----------------------------------------------------------------------')
-    method_q = {
-      'type': 'list',
-      'name': 'method',
-      'message': 'Select action:',
-      'choices': ['Depart', \
-            'Insert', \
-            'Delete', \
-            'Query', \
-            'Overlay', \
-            'Help', \
-            'Exit']
-      }
-    method_a = prompt(method_q, style=style)['method']
+	while True:
+		print('----------------------------------------------------------------------')
+		method_q = {
+			'type': 'list',
+			'name': 'method',
+			'message': 'Select action:',
+			'choices': ['Network Overlay', \
+						'Insert a Song', \
+						'Search for a Song', \
+						'Delete a Song', \
+						'Depart from Chord', \
+						'Help', \
+						'Exit']
+		}
+		method_a = prompt(method_q, style=style)['method']
 
-    if method_a == 'Depart':
-      print("Node departure...")
-      departURL = ends.c_depart
-      endpoint = baseURL + departURL
-      response = requests.get(endpoint)
-      if response.text == "Left the Chord":
-        print(response.text)
-        print("Node is out of Toychord network")
-        exit(0)
-      else:
-        print(response.text)
+		if method_a == 'Depart from Chord':
+			print(yellow("Preparing Node to depart from Chord..."))
+			try:
+				response = requests.get(baseURL + ends.c_depart)
+				if response.status_code == 200:
+					if response.text == "Left the Chord":
+						print(response.text)
+						print(green("Node is out of Toychord network"))
+						exit(0)
+					else:
+						print(red(response.text))
+				else :
+					print(red("Got a bad response status code " + response.status_code))
+			except:
+				print(red("Could not establish connection with Node. Node didnt depart..."))
+				print(red("Unfortunately exiting..."))
+				exit(0)
+			continue
 
-      continue
+		elif method_a == 'Insert a Song':
+			print('Insert a Title-Value pair for the song you wish to insert')
+			fetch_q = [
+			{
+				'type': 'input',
+				'name': 'key',
+				'message': 'Song Title:',
+				'filter': lambda val: str(val)
+			},
+			{
+				'type': 'input',
+				'name': 'value',
+				'message': 'Value:',
+				'filter': lambda val: str(val)
+			}
+			]
+			fetch_a = prompt(fetch_q, style=style)
+			print(yellow("Inserting Song: ") + fetch_a['key'] + yellow(" ..."))
+			try:
+				response = requests.post(baseURL + ends.c_insert ,data={'key':fetch_a['key'],'value':fetch_a['value']})
+				if response.status_code == 200:
+					print(green(response.text))
+				else :
+					print(red("Got a bad response status code " + response.status_code))
+			except:
+				print(red("Could not establish connection with Node. Song wasnt inserted..."))
+				print(red("Unfortunately exiting..."))
+				exit(0)
 
-    elif method_a == 'Insert':
-      print('Insert key-value pair...')
-      fetch_q = [
-      {
-        'type': 'input',
-        'name': 'key',
-        'message': 'Song Title:',
-        'filter': lambda val: str(val)
-      },
-      {
-        'type': 'input',
-        'name': 'value',
-        'message': 'Value:',
-        'filter': lambda val: str(val)
-      }
-      ]
-      fetch_a = prompt(fetch_q, style=style)
-      print(fetch_a['key'])
-      print(fetch_a['value'])
-      insertURL = ends.c_insert
-      endpoint = baseURL + insertURL
-      print(endpoint)
-      response = requests.post(endpoint,data={'key':fetch_a['key'],'value':fetch_a['value']})
+			continue
 
-      print(response.text)
+		elif method_a == 'Delete a Song':
+			print('Insert the Song Title you wish to delete')
+			fetch_q = [
+			{
+				'type': 'input',
+				'name': 'key',
+				'message': 'Song Title:',
+				'filter': lambda val: str(val)
+			}]
+			fetch_a = prompt(fetch_q, style=style)
+			print(yellow("Deleting Song: ") + fetch_a['key'] + yellow(" ..."))
+			try:
+				response = requests.post(baseURL + ends.c_delete ,data={'key':fetch_a['key']})
+				if response.status_code == 200:
+					print(green(response.text))
+				else :
+					print(red("Got a bad response status code " + response.status_code))
+			except:
+				print(red("Could not establish connection with Node. Song wasnt deleted..."))
+				print(red("Unfortunately exiting..."))
+				exit(0)
 
-      continue
+			continue
 
-    elif method_a == 'Delete':
-      print('Delete key...')
+		elif method_a == 'Search for a Song':
+			print('Insert the Song Title you wish to Search')
+			fetch_q = [
+			{
+				'type': 'input',
+				'name': 'key',
+				'message': 'Song Title:',
+				'filter': lambda val: str(val)
+			}]
+			fetch_a = prompt(fetch_q, style=style)
+			print(yellow("Searching Song: ") + fetch_a['key'] + yellow(" ..."))
+			try:
+				response = requests.post(baseURL + ends.c_query ,data={'key':fetch_a['key']})
+				if response.status_code == 200:
+					print(green(response.text))
+				else :
+					print(red("Got a bad response status code " + response.status_code))
+			except:
+				print(red("Could not establish connection with Node. Couldnt search for song..."))
+				print(red("Unfortunately exiting..."))
+				exit(0)
 
-      deleteURL = ends.c_delete
-      endpoint = baseURL + deleteURL
-      # response = requests.post(endpoint)
+			continue
 
 
-      continue
+		elif method_a == 'Network Overlay':
+			print(yellow("Initiating Network Overlay..."))
+			try:
+				response = requests.get(baseURL + ends.c_overlay)
+				if response.status_code == 200:
+					print(green(response.text))
+				else :
+					print(red("Got a bad response status code " + response.status_code))
+			except:
+				print(red("Could not establish connection with Node..."))
+				print(red("Unfortunately exiting..."))
+				exit(0)
 
-    elif method_a == 'Query':
-      print('Query key...')
+			continue
 
-      queryURL = ends.c_query
-      endpoint = baseURL + queryURL
-      # response = requests.post(endpoint)
-      continue
+		elif method_a == 'Help':
+			print('-------------------------------- Help --------------------------------\n')
 
+			overlayHelp="Overlay: This functions recreates and prints the current Network Topology(eg. Node1 -> Node2 -> ...)"
+			insertHelp="Insert Song: This functions expects a Song Title and a Song Value and inserts them in the Chord (eg. )"
+			queryHelp="Search Song: This function expects a Song Title and searches the Node in whitch the song is stored"
+			deleteHelp="deleteHelp"
+			departHelp="departHelp"
 
-    elif method_a == 'Overlay':
-      print('Overlay key...')
+			print(	" -",overlayHelp,"\n"
+					" -",insertHelp,"\n",
+					"-",queryHelp,"\n",
+					"-",deleteHelp,"\n",
+					"-",departHelp,"\n",
+					)
 
-      overlayURL = ends.c_overlay
-      endpoint = baseURL + overlayURL
-      response = requests.get(endpoint)
-      print("OVERLAY OPERATION: ",response.text)
+			continue
 
-      continue
+		elif method_a == 'Exit':
+			os.system('cls||clear')
 
-    elif method_a == 'Help':
-      print('---- Help ----\n')
+			break
 
-      joinHelp="joinHelp"
-      departHelp="departHelp"
-      insertHelp="insertHelp"
-      deleteHelp="deleteHelp"
-      queryHelp="queryHelp"
-      overlayHelp="overlayHelp"
-
-      print(" -",joinHelp,"\n",\
-        "-",departHelp,"\n",\
-        "-",insertHelp,"\n",\
-        "-",deleteHelp,"\n",\
-        "-",queryHelp,"\n",\
-        "-",overlayHelp,"\n"
-      )
-
-      continue
-
-    elif method_a == 'Exit':
-      os.system('cls||clear')
-
-      break
-
-    else:
-      break
+		else:
+			break
 
 if __name__ == '__main__':
-  if sys.argv[1] in ("-p", "-P"):
-    my_port = sys.argv[2]
-    my_ip = os.popen('ip addr show ' + config.NETIFACE + ' | grep "\<inet\>" | awk \'{ print $2 }\' | awk -F "/" \'{ print $1 }\'').read().strip()
-    client(my_ip, my_port)
-  else:
-    print("!! you must tell me the port. Ex. -p 5000 !!")
-    exit(0)
+	if len(sys.argv) < 3:
+		print("!! you must tell me the port. Ex. -p 5000 !!")
+		exit(0)
+	if sys.argv[1] in ("-p", "-P"):
+		my_port = sys.argv[2]
+		my_ip = os.popen('ip addr show ' + config.NETIFACE + ' | grep "\<inet\>" | awk \'{ print $2 }\' | awk -F "/" \'{ print $1 }\'').read().strip()
+		client(my_ip, my_port)

@@ -9,6 +9,9 @@ This will create the `distr` directory if it doesn’t exist, and also create di
 
 A common directory location for a virtual environment is .venv. This name keeps the directory typically hidden in your shell and thus out of the way while giving it a name that explains why the directory exists. It also prevents clashing with .env environment variable definition files that some tooling supports.
 
+In case you dont have preinstalled the python3-venv package,
+just run `apt-get install python3-venv`
+
 ## Once you’ve created a virtual environment, you may activate it.
 
 On Unix or MacOS, run:
