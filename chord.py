@@ -212,8 +212,8 @@ def insert_song(args):
     print(args) # args is a pair of (key,value)
     hashed_key = hash(args["key"])
     command = 'insert'
-    previous_ID = globs.mids[0]["uid"]
-    next_ID = globs.mids[1]["uid"]
+    previous_ID = globs.nids[0]["uid"]
+    next_ID = globs.nids[1]["uid"]
     self_ID = globs.my_id
     if(hashed_key > previous_ID and hashed_key <= self_ID):
         item = found(globs.songs, args["key"])
@@ -234,9 +234,10 @@ def insert_song(args):
     elif(hashed_key > self_ID or hashed_key < previous_ID):
         print('forwarding..')
         tuple_load = {"key":args["key"], "value":args["value"]}
-        result = requests.post(config.ADDR + globs.mids[1]["ip"] + ":" + globs.mids[1]["port"] + ends.n_insert, data = tuple_load)
+        endpoint = config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_insert
+        result = requests.post(endpoint, data = tuple_load)
         # req = requests.get(url = 'http://' + next_ID + '/insert', params = tuple_load)
-        return result.content.decode("utf-8")
+        return result.text
     print("Insersion from server is done!")
 
 

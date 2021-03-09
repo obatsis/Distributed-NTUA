@@ -36,19 +36,24 @@ def cli_depart():
 @app.route(ends.c_insert ,methods = ['POST'])										# cli (client) operation insert
 def cli_insert():
 	pair = request.form.to_dict()
-	result = request.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_insert, data = pair)
-	return result
+	# pair = request.get_json()
+	print(pair)
+	endpoint = config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_insert
+	print(endpoint)
+	result = requests.post(endpoint, data = pair)
+	return result.text
+	return "hi"
 
 @app.route(ends.c_delete ,methods = ['POST'])										# cli (client) operation delete
 def cli_delete():
 	pair = request.form.to_dict()
-	result = request.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_delete, data = pair)
+	result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_delete, data = pair)
 	return result
 
 @app.route(ends.c_query ,methods = ['POST'])										# cli (client) operation query
 def cli_query():
 	pair = request.form.to_dict()
-	result = request.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ensd.n_query, data = pair)
+	result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ensd.n_query, data = pair)
 	return result
 
 @app.route(ends.n_overlay ,methods = ['POST'])									# chord operation network overlay
@@ -59,9 +64,9 @@ def chord_over():
 
 @app.route(ends.n_insert ,methods = ['POST'])								# chord operation insert(key.value)
 def chord_insert():
-	if request.method == 'POST':
-		result = request.form.to_dict()
-		return insert_song(result)
+	result = request.form.to_dict()
+	return insert_song(result)
+	# return "geia"
 
 @app.route(ends.n_delete ,methods = ['POST'])									# chord operation delete(key)
 def chord_delete():

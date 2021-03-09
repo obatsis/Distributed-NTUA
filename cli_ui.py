@@ -1,9 +1,8 @@
 import requests
 import os
 from PyInquirer import style_from_dict, Token, prompt
-
-
-baseURL = 'http://localhost:5000/cli'
+import sys
+import ends
 
 style = style_from_dict({
     Token.QuestionMark: '#E91E63 bold',
@@ -19,9 +18,11 @@ def red(string):
 def yellow(string):
     return '\033[1;93m {}\033[00m\n'.format(string)
 
-def client():
+def client(port):
     os.system('cls||clear')
     yellow('What a beautiful day to enter the cult...')
+    baseURL = 'http://localhost:'+port
+
     while True:
         print('----------------------------------------------------------------------')
         method_q = [
@@ -41,57 +42,85 @@ def client():
         method_a = prompt(method_q, style=style)['method']
         # os.system('cls||clear')
 
-        if method_a == 'Join':
-            print("Node join")
+        # if method_a == 'Join':
+        #     print("Node join...")
 
-            joinURL = "joinURL"
-            endpoint = baseURL + joinURL
-            # response = requests.get(endpoint)
+        #     joinURL = "joinURL"
+        #     endpoint = baseURL + joinURL
+        #     # response = requests.get(endpoint)
 
-            continue
+        #     continue
 
-        elif method_a == 'Depart':
-            print("Node departure")
+        if method_a == 'Depart':
+            print("Node departure...")
 
-            departURL = "departURL"
+            departURL = ends.c_depart
             endpoint = baseURL + departURL
-            # response = requests.get(endpoint)
+            response = requests.get(endpoint)
+            if response.text == "Left the Chord":
+                print(response.text)
+                print("Node is out of Toychord network")
+                exit(0)
+            else:
+                print(response.text)
+                
             continue
 
         elif method_a == 'Insert':
-            print('Insert key-value pair')
+            print('Insert key-value pair...')
             
-            insertURL = "departURL"
+            fetch_q = [
+                {
+                    'type': 'input',
+                    'name': 'key',
+                    'message': 'Song Title:',
+                    'filter': lambda val: str(val)
+                },
+                {
+                    'type': 'input',
+                    'name': 'value',
+                    'message': 'Value:',
+                    'filter': lambda val: str(val)
+                }
+                ]
+            fetch_a = prompt(fetch_q, style=style)
+            print(fetch_a['key'])
+            print(fetch_a['value'])
+            insertURL = ends.c_insert
             endpoint = baseURL + insertURL
-            # response = requests.post(endpoint)
+            print(endpoint)
+            response = requests.post(endpoint,data={'key':fetch_a['key'],'value':fetch_a['value']})
+            
+            print(response.text)
 
             continue
 
         elif method_a == 'Delete':
-            print('Delete key')
+            print('Delete key...')
             
-            deleteURL = "deleteURL"
+            deleteURL = ends.c_delete
             endpoint = baseURL + deleteURL
             # response = requests.post(endpoint)
+
 
             continue
 
         elif method_a == 'Query':
-            print('Query key')
+            print('Query key...')
 
-            queryURL = "queryURL"
+            queryURL = ends.c_query
             endpoint = baseURL + queryURL
             # response = requests.post(endpoint)
-
             continue
 
 
         elif method_a == 'Overlay':
-            print('Overlay key')
+            print('Overlay key...')
             
-            overlayURL = "overlayURL"
+            overlayURL = ends.c_overlay
             endpoint = baseURL + overlayURL
-            # response = requests.get(endpoint)
+            response = requests.get(endpoint)
+            print("OVERLAY OPERATION: ",response.text)
 
             continue
 
@@ -124,5 +153,8 @@ def client():
             break
 
 if __name__ == '__main__':
-
-    client()
+    if sys.argv[1] in ("-p", "-P"):
+        my_port = sys.argv[2]
+        client(my_port)
+    else:
+        print("You did not pass port number")
