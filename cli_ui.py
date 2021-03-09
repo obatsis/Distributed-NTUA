@@ -7,10 +7,10 @@ import config
 
 style = style_from_dict({
 	Token.QuestionMark: '#E91E63 bold',
-    Token.Selected: '#673AB7 bold',
-    Token.Instruction: '#0bf416',
-    Token.Answer: '#2196f3 bold',
-    Token.Question: '#0bf416 bold',
+	Token.Selected: '#673AB7 bold',
+	Token.Instruction: '#0bf416',
+	Token.Answer: '#2196f3 bold',
+	Token.Question: '#0bf416 bold',
 })
 
 def red(string):
