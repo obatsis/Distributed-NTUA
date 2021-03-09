@@ -23,5 +23,6 @@ fi
 echo " -------- installing dependecies -------- "
 # apt-get install python3-venv
 pip3 install Flask
+pip3 install Flask-Script
 pip3 install requests
 pip3 install PyInquirer

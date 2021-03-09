@@ -13,10 +13,7 @@ def main(argv):
 
 	# info check test
 	response = requests.get(address)
-	print("status code: {}" .format(response.status_code), end =" ")
-	if response.status_code == 200:
-		print("			ALL GOOD")
-		print("response: {}" .format(response.text))
+
 
 	# net overlay test
 	response = requests.get(address + "cli/overlay")
@@ -24,28 +21,31 @@ def main(argv):
 	if response.status_code == 200:
 		print("		ALL GOOD")
 		print("response: {}" .format(response.text))
-
-	response = requests.post(address + "chord/insert", data = dat)
-	print("status code: {}" .format(response.status_code), end =" ")
-	if response.status_code == 200:
-		print("		ALL GOOD")
-		print("response: {}" .format(response.text))
+		print("response url: {}" .format(response.url))
+		print(response.url.split("/")[2])
 
 
-	response = requests.post(address + "chord/delete", data = dat)
-	print("status code: {}" .format(response.status_code), end =" ")
-	if response.status_code == 200:
-		print("		ALL GOOD")
-		print("response: {}" .format(response.text))
-
-	response = requests.post(address + "chord/query", data = dat)
-	print("status code: {}" .format(response.status_code), end =" ")
-	if response.status_code == 200:
-		print("		ALL GOOD")
-		print("response: {}" .format(response.text))
-
-
-	response = requests.get(address+"/over")	#intentionally in order to produce an error
+	# response = requests.post(address + "chord/insert", data = dat)
+	# print("status code: {}" .format(response.status_code), end =" ")
+	# if response.status_code == 200:
+	# 	print("		ALL GOOD")
+	# 	print("response: {}" .format(response.text))
+	#
+	#
+	# response = requests.post(address + "chord/delete", data = dat)
+	# print("status code: {}" .format(response.status_code), end =" ")
+	# if response.status_code == 200:
+	# 	print("		ALL GOOD")
+	# 	print("response: {}" .format(response.text))
+	#
+	# response = requests.post(address + "chord/query", data = dat)
+	# print("status code: {}" .format(response.status_code), end =" ")
+	# if response.status_code == 200:
+	# 	print("		ALL GOOD")
+	# 	print("response: {}" .format(response.text))
+	#
+	#
+	# response = requests.get(address+"/over")	#intentionally in order to produce an error
 
 
 	# print("response url: {}" .format(response.url))
