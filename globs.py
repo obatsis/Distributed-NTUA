@@ -12,3 +12,7 @@ global started_overlay
 started_overlay = False
 global still_on_chord
 still_on_chord = True
+
+#-------------------------------------------------------------------------------------------------------
+global songs
+songs = []

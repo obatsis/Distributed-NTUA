@@ -96,14 +96,6 @@ def boot_depart():
 	d_node = request.form.to_dict()
 	return boot_depart_func(d_node)
 
-
-# @app.before_first_request
-# def initialize():
-#     print(blue(" TEST this gets called only once, when the first request comes in"))
-
-def hash(key):
-	return hashlib.sha1(key.encode('utf-8')).hexdigest()
-
 def server():
 	print("\n")
 	if len(sys.argv) < 3:
