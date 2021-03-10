@@ -45,7 +45,7 @@ def cli_delete():
 @app.route(ends.c_query ,methods = ['POST'])										# cli (client) operation query
 def cli_query():
 	pair = request.form.to_dict()
-	result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_query, data = pair)
+	result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
 	return result.text
 
 @app.route(ends.n_overlay ,methods = ['POST'])									# chord operation network overlay
@@ -66,7 +66,7 @@ def chord_delete():
 
 @app.route(ends.n_query ,methods = ['POST'])									# chord operation query(key)
 def chord_query():
-	result = request.form.to_dict()
+	result = request.get_json()
 	return query_song(result)
 
 

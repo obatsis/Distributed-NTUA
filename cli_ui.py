@@ -68,7 +68,7 @@ def client(ip, port):
 			}
 			]
 			fetch_a = prompt(fetch_q, style=style)
-			print(yellow("Inserting Song: ") + fetch_a['key'] + yellow(" ..."))
+			print(yellow("Inserting Song: ") + fetch_a['key'] + yellow("..."))
 			try:
 				response = requests.post(baseURL + ends.c_insert ,data={'key':fetch_a['key'],'value':fetch_a['value']})
 				if response.status_code == 200:
@@ -92,7 +92,7 @@ def client(ip, port):
 				'filter': lambda val: str(val)
 			}]
 			fetch_a = prompt(fetch_q, style=style)
-			print(yellow("Deleting Song: ") + fetch_a['key'] + yellow(" ..."))
+			print(yellow("Deleting Song: ") + fetch_a['key'] + yellow("..."))
 			try:
 				response = requests.post(baseURL + ends.c_delete ,data={'key':fetch_a['key']})
 				if response.status_code == 200:
@@ -116,14 +116,12 @@ def client(ip, port):
 				'filter': lambda val: str(val)
 			}]
 			fetch_a = prompt(fetch_q, style=style)
-			print(yellow("Searching Song: ") + fetch_a['key'] + yellow(" ..."))
+			print(yellow("Searching Song: ") + fetch_a['key'] + yellow("..."))
 			try:
 				response = requests.post(baseURL + ends.c_query ,data={'key':fetch_a['key']})
 				if response.status_code == 200:
-					if response.text in ("None","null"):
-						print("Song not found")
-					else:
-						print("Song found in node with id ",green(response.text))
+					print("Song found in node with id ",green(response.text.split(" ")[0]))
+					print("Song value: " + green(response.text.split(" ")[1]))
 				else:
 					print(red("Got a bad response status code " + response.status_code))
 			except:

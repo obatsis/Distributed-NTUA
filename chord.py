@@ -113,7 +113,7 @@ def boot_depart_func(d_node):
 		next 			= globs.mids[d_node_idx+1] if d_node_idx < len(globs.mids)-1 else globs.mids[0]
 		next_of_next 	= globs.mids[d_node_idx+2] if d_node_idx < len(globs.mids)-2 else (globs.mids[0] if d_node_idx < len(globs.mids)-1 else globs.mids[1])
 
-		response_p = requests.post(config.ADDR + prev["ip"] + ":" + prev["port"] + ends.n_update_peers, json = {"prev" : prev_of_prev, "next": next})
+		response_p = requests.post(config.ADDR + prev["ip"] + ":" + prev["port"] + ends.n_update_peers, json = {"prev": prev_of_prev, "next": next})
 		if response_p.status_code == 200 and response_p.text == "new neighbours set":
 			if config.BDEBUG:
 				print(blue("Updated previous neighbour successfully"))
@@ -203,98 +203,193 @@ def found(key):
 			return(item)
 
 def insert_song(args):
-	print(args) # args is a pair of (key,value)
 	hashed_key = hash(args["key"])
-	command = 'insert'
+	if config.NDEBUG:
+		print(yellow("Got request to insert song: {}").format(args))
+		print(yellow("Song Hash: ") + hashed_key)
 	previous_ID = globs.nids[0]["uid"]
 	next_ID = globs.nids[1]["uid"]
 	self_ID = globs.my_id
-	if(hashed_key > previous_ID and hashed_key <= self_ID):
+	who = 1
+	if previous_ID > self_ID and next_ID > self_ID:
+		who = 0	# i have the samallest id
+	elif previous_ID < self_ID and next_ID < self_ID:
+		who = 2 # i have the largest id
+
+	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
+		# song goes in me
 		item = found(args["key"])
 		if(item): # update
 			globs.songs.remove(item)
 		globs.songs.append({"key":args["key"], "value":args["value"]}) # inserts the updated pair of (key,value)
 		if config.NDEBUG:
-			print('Updated!')
-			print(globs.songs)
+			print(yellow('Inserted/Updated song: {}').format(args))
+			if config.vNDEBUG:
+				print(yellow("My songs are now:"))
+				print(globs.songs)
 		return self_ID
-	elif((hashed_key > self_ID and hashed_key > previous_ID) or (hashed_key < previous_ID and hashed_key <= self_ID)):
-		item = found(args["key"])
-		if(item): # update
-			globs.songs.remove(item)
-		globs.songs.append({"key":args["key"], "value":args["value"]}) # inserts the updated pair of (key,value)
+	elif((hashed_key > self_ID and who == 1) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key < previous_ID and hashed_key <= next_ID and who == 2)):
+		# forward song to next
 		if config.NDEBUG:
-			print('Updated!')
-			print(globs.songs)
-		return self_ID
-	elif(hashed_key > self_ID or hashed_key < previous_ID):
-		if config.NDEBUG:
-			print('forwarding..')
+			print(yellow('forwarding to next..'))
 		tuple_load = {"key":args["key"], "value":args["value"]}
-		result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_insert, data = tuple_load)
-		# req = requests.get(url = 'http://' + next_ID + '/insert', params = tuple_load)
-		return result.text
-	print("Insersion from server is done!")
+		try:
+			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_insert, data = tuple_load)
+			if result.status_code == 200:
+				if config.NDEBUG:
+					print("Got response from next: " + yellow(result.text))
+				return result.text
+			else:
+				print(red("Something went wrong while trying to forward insert to next"))
+				return "Bad status code: " + result.status_code
+		except:
+			print(red("Next is not responding to my call..."))
+			return "Exception raised while forwarding to next"
+		return self_ID
+	elif((hashed_key <= previous_ID and who ==1) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2) or (hashed_key > previous_ID and hashed_key > next_ID and who == 0)):
+		# forward song to prev
+		if config.NDEBUG:
+			print('forwarding to prev..')
+		tuple_load = {"key":args["key"], "value":args["value"]}
+		try:
+			result = requests.post(config.ADDR + globs.nids[0]["ip"] + ":" + globs.nids[0]["port"] + ends.n_insert, data = tuple_load)
+			if result.status_code == 200:
+				if config.NDEBUG:
+					print("Got response from prev: " + yellow(result.text))
+				return result.text
+			else:
+				print(red("Something went wrong while trying to forward insert to prev"))
+				return "Bad status code: " + result.status_code
+		except:
+			print(red("Prev is not responding to my call..."))
+			return "Exception raised while forwarding to prev"
 
 def delete_song(args):
-	print(args) # args is a pair of (key,value)
 	hashed_key = hash(args["key"])
+	if config.NDEBUG:
+		print(yellow("Got request to delete song: {}").format(args))
+		print(yellow("Song Hash: ") + hashed_key)
 	previous_ID = globs.nids[0]["uid"]
 	next_ID = globs.nids[1]["uid"]
 	self_ID = globs.my_id
-	command = 'delete'
-	if(hashed_key > previous_ID and hashed_key <= self_ID):
+	who = 1
+	if previous_ID > self_ID and next_ID > self_ID:
+		who = 0	# i have the samallest id
+	elif previous_ID < self_ID and next_ID < self_ID:
+		who = 2 # i have the largest id
+
+	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
+		# song is in me
 		item = found(args["key"])
 		if(item):
 			globs.songs.remove(item)
+			if config.NDEBUG:
+				print(yellow('Deleted song: {}').format(args))
+				if config.vNDEBUG:
+					print(yellow("My songs are now:"))
+					print(globs.songs)
+			return "Removed by node " + self_ID
+		else:
+			if config.NDEBUG:
+				print(yellow('Cant find song: {}').format(args))
+				print(yellow('Unable to delete'))
+				if config.vNDEBUG:
+					print(yellow("My songs are now:"))
+					print(globs.songs)
+			return 'Cant find song, unable to delete it'
+	elif((hashed_key > self_ID and who == 1) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key < previous_ID and hashed_key <= next_ID and who == 2)):
+		# forward delete to next
 		if config.NDEBUG:
-			print('Deleted!')
-			print(globs.songs)
-		return "Removed by node" + self_ID
-	elif((hashed_key > self_ID and hashed_key > previous_ID) or (hashed_key < previous_ID and hashed_key <= self_ID)):
-		item = found(args["key"])
-		if(item):
-			globs.songs.remove(item)
+			print(yellow('forwarding delete to next..'))
+		try:
+			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_delete, data = {"key": args["key"]})
+			if result.status_code == 200:
+				if config.NDEBUG:
+					print("Got response from next: " + yellow(result.text))
+				return result.text
+			else:
+				print(red("Something went wrong while trying to forward delete to next"))
+				return "Bad status code: " + result.status_code
+		except:
+			print(red("Next is not responding to my call..."))
+			return "Exception raised while forwarding delete to next"
+
+	elif((hashed_key <= previous_ID and who ==1) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2) or (hashed_key > previous_ID and hashed_key > next_ID and who == 0)):
+		# forward song to prev
 		if config.NDEBUG:
-			print('Deleted!')
-			print(globs.songs)
-		return "Removed by node" + self_ID
-	elif(hashed_key > self_ID or hashed_key < previous_ID):
-		if config.NDEBUG:
-			print('forwarding..')
-		result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_delete, data = {"key": args["key"]})
-		# req = requests.get(url = 'http://' + next_ID + '/delete', params = tuple_load)
-		return result.text
-	print("Deletion from server is done!")
+			print('forwarding delete to prev..')
+		try:
+			result = requests.post(config.ADDR + globs.nids[0]["ip"] + ":" + globs.nids[0]["port"] + ends.n_delete, data = {"key":args["key"]})
+			if result.status_code == 200:
+				if config.NDEBUG:
+					print("Got response from prev: " + yellow(result.text))
+				return result.text
+			else:
+				print(red("Something went wrong while trying to forward delete to prev"))
+				return "Bad status code: " + result.status_code
+		except:
+			print(red("Prev is not responding to my call..."))
+			return "Exception raised while forwarding delete to prev"
 
 def query_song(args):
-	command = 'query'
+	hashed_key = hash(args["key"])
+	if config.NDEBUG:
+		print(yellow("Got request to search for song: {}").format(args))
+		print(yellow("Song Hash: ") + hashed_key)
 	previous_ID = globs.nids[0]["uid"]
 	next_ID = globs.nids[1]["uid"]
 	self_ID = globs.my_id
-	if(globs.still_on_chord == False):
-		return 'NodeIsDown'
-	if(args["key"] == '*'):
-		return (json.dumps({'matrix_of_items':matrix_of_items}))
-	else:
-		hashed_key = hash(args["key"])
-		# δεν θεωρω οτι το id ειναι χασαρισμενο...
-		if(hashed_key > previous_ID and hashed_key < self_ID):
-			item = found(args["key"])
+	who = 1
+	if previous_ID > self_ID and next_ID > self_ID:
+		who = 0	# i have the samallest id
+	elif previous_ID < self_ID and next_ID < self_ID:
+		who = 2 # i have the largest id
+	# if(args["key"] == '*'):
+	# 	return (json.dumps({'matrix_of_items':matrix_of_items}))
+
+	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
+		# song is in me
+		item = found(args["key"])
+		if(item):
 			if config.NDEBUG:
-				print('It is found..')
-				print(item)
-			return json.dumps(item)
-		elif((hashed_key > self_ID and hashed_key > previous_ID) or (hashed_key < previous_ID and hashed_key <= self_ID)):
-			item = found(args["key"])
+				print(yellow('Found song: {}').format(args))
+			# return str(args["value"])
+			return self_ID + " " + item["value"]
+
+		else:
 			if config.NDEBUG:
-				print('It is found..')
-				print(item)
-			return json.dumps(item)
-		elif(hashed_key > self_ID or hashed_key < previous_ID):
-			if config.NDEBUG:
-				print('forwarding..')
-			tuple_load = {"key":args["key"]}
-			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_query, data = tuple_load)
-			# req = requests.get(url = 'http://' + next_ID + '/query', params = tuple_load)
-			return result.text
+				print(yellow('Cant find song: {}').format(args))
+			return "Cant find song"
+	elif((hashed_key > self_ID and who == 1) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key < previous_ID and hashed_key <= next_ID and who == 2)):
+		# forward delete to next
+		if config.NDEBUG:
+			print(yellow('forwarding query to next..'))
+		try:
+			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_query, data = {"key": args["key"]})
+			if result.status_code == 200:
+				if config.NDEBUG:
+					print("Got response from next: " + yellow(result.text))
+				return result.text
+			else:
+				print(red("Something went wrong while trying to forward query to next"))
+				return "Bad status code: " + result.status_code
+		except:
+			print(red("Next is not responding to my call..."))
+			return "Exception raised while forwarding query to next"
+
+	elif((hashed_key <= previous_ID and who ==1) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2) or (hashed_key > previous_ID and hashed_key > next_ID and who == 0)):
+		# forward song to prev
+		if config.NDEBUG:
+			print('forwarding query to prev..')
+		try:
+			result = requests.post(config.ADDR + globs.nids[0]["ip"] + ":" + globs.nids[0]["port"] + ends.n_query, data = {"key":args["key"]})
+			if result.status_code == 200:
+				if config.NDEBUG:
+					print("Got response from prev: " + yellow(result.text))
+				return result.text
+			else:
+				print(red("Something went wrong while trying to forward query to prev"))
+				return "Bad status code: " + result.status_code
+		except:
+			print(red("Prev is not responding to my call..."))
+			return "Exception raised while forwarding query to prev"

@@ -5,4 +5,5 @@ ADDR = 'http://'
 BDEBUG = True		# debug information for bootstrap operations
 NDEBUG = True		# debug information for node operations
 vBDEBUG = False		# extra verbose debug information for bootstrap operations
+vNDEBUG = False		# extra verbose debug information for node operations
 k = 1
