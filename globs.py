@@ -15,6 +15,7 @@ global started_overlay	# flag that becomes true if a node starts an overlay oper
 started_overlay = False
 global still_on_chord	# flag that becomes (and stays) false when a node departs (used to prevent unwanted operation from a departed node)
 still_on_chord = True
+first_on_query = False
 
 #-------------------------------------------------------------------------------------------------------
 # Songs global variables
