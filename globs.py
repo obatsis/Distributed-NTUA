@@ -13,11 +13,21 @@ global my_ip	# ip of node
 global my_port	# port that Flask is listening
 global started_overlay	# flag that becomes true if a node starts an overlay operation (when the operation finishes, it becomes false arain)
 started_overlay = False
+global started_query	# flag that becomes true if a node starts an overlay operation (when the operation finishes, it becomes false arain)
+started_query = False
 global still_on_chord	# flag that becomes (and stays) false when a node departs (used to prevent unwanted operation from a departed node)
 still_on_chord = True
 first_on_query = False
 
-#-------------------------------------------------------------------------------------------------------
 # Songs global variables
+#-------------------------------------------------------------------------------------------------------
 global songs	# list of songs saved on a node (contains dicts that look like: {"key": "Song-title, "value": "some value"})
 songs = []
+
+
+#-------------------------------------------------------------------------------------------------------
+# variables for async receiving
+global got_qresponse
+got_qresponse = False
+global q_response
+global q_responder

@@ -9,7 +9,9 @@ import config
 from utils.colorfy import *
 import globs
 import ends
-
+# import threading
+from threading import Thread
+import time
 app = Flask(__name__)
 
 @app.route('/',methods = ['GET'])												# root directory (useless)
@@ -45,8 +47,25 @@ def cli_delete():
 @app.route(ends.c_query ,methods = ['POST'])										# cli (client) operation query
 def cli_query():
 	pair = request.form.to_dict()
-	result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
-	return result.text
+	print(blue("main"))
+	globs.started_query = True
+	x = my_thread(target=t_p ,args = (pair,))
+	x.start()
+	while not(globs.got_qresponse):
+		time.sleep(1)
+		print(yellow("Waiting for query respose..."))
+	# res = query_song_v2({"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
+	# result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
+	# return result.text
+	return globs.q_responder + " " + globs.q_response
+	# return res
+	res = x.join()
+
+
+def t_p(pair):
+	print(red("thread")+ globs.my_id)
+	res = query_song_v2({"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
+	return res
 
 @app.route(ends.n_overlay ,methods = ['POST'])									# chord operation network overlay
 def chord_over():
@@ -66,8 +85,12 @@ def chord_delete():
 
 @app.route(ends.n_query ,methods = ['POST'])									# chord operation query(key)
 def chord_query():
+	# result = request.form.to_dict()
 	result = request.get_json()
-	return query_song(result)
+	# x = threading.Thread(target=query_song_v2, args = [result])
+	# x.start()
+	# x.join()
+	return query_song_v2(result)
 
 
 @app.route(ends.n_update_peers ,methods = ['POST'])									# update(nodeID)

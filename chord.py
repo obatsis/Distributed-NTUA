@@ -5,7 +5,8 @@ import config
 import ends
 import hashlib
 import json
-
+import time
+from threading import Thread
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Node Functions
 def node_initial_join():
@@ -393,3 +394,116 @@ def query_song(args):
 		except:
 			print(red("Prev is not responding to my call..."))
 			return "Exception raised while forwarding query to prev"
+
+def query_song_v2(args):
+	song = args["song"]
+	who_is = args["who"]
+	if who_is["uid"] != globs.my_id and globs.started_query: # this means that i got here after the node with the song sent it to me
+		globs.started_query = False
+		globs.got_qresponse = True
+		globs.q_response = song["key"]
+		globs.q_responder = who_is["uid"]
+		if config.NDEBUG:
+			print(yellow("Got the response directly from the source node: ") + who_is["uid"])
+			print(yellow("sending him confirmation and unlocking 'got_qresponse' in order for the main thread to unlock"))
+		return globs.my_id + " " + song["key"]
+	hashed_key = hash(song["key"])
+	if config.NDEBUG:
+		print(yellow("Got request to search for song: {}").format(song))
+		print(yellow("From node: "))
+		print(who_is)
+		print(yellow("Song Hash: ") + hashed_key)
+	previous_ID = globs.nids[0]["uid"]
+	next_ID = globs.nids[1]["uid"]
+	self_ID = globs.my_id
+	who = 1
+	if previous_ID > self_ID and next_ID > self_ID:
+		who = 0	# i have the samallest id
+	elif previous_ID < self_ID and next_ID < self_ID:
+		who = 2 # i have the largest id
+
+	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
+		# song is in me
+		item = found(song["key"])
+		if(item):
+			if config.NDEBUG:
+				print(yellow('Found song: {}').format(song))
+			# return str(song["value"])
+			#send your id and song to the node who started the request...
+			# you know it because thw who_is contains it
+			#wait for response...if he sends you his id and the song everythikg is ok
+			# so you send ok to your prev in order to unlock the chord
+			# if not send a uniue error message
+
+			# it seems to work fine but there is a BUG!!!
+			# when the node who has the song makes the request we have a problem...
+			# he gets stuck in the whilw loop (main thread)
+			# and apparently something bad hammens with the other thread...
+			# possiply there are many threads oppening and something rely bad happens
+			if config.NDEBUG:
+				print("Sending the song to the node who requested it and waiting for response...")
+			try:
+				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": song})
+				if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
+					if config.NDEBUG:
+						print("Got response from the node who requested the song: " + yellow(result.text.split(" ")[0]))
+					return self_ID + " " + item["value"]
+				else:
+					print(red("node who requested the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
+					return "Bad status code: " + result.status_code
+			except:
+				print(red("node who requested the song dindnt respond at all"))
+				return "Exception raised node who requested the song dindnt respond "
+		else:
+			if config.NDEBUG:
+				print(yellow('Cant find song: {}').format(song))
+			return "Cant find song"
+	elif((hashed_key > self_ID and who == 1) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key < previous_ID and hashed_key <= next_ID and who == 2)):
+		# forward query to next
+		if config.NDEBUG:
+			print(yellow('forwarding query to next..'))
+		try:
+			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_query, json = {"who": who_is, "song": song})
+			if result.status_code == 200:
+				if config.NDEBUG:
+					print("Got response from next: " + yellow(result.text))
+				return result.text
+			else:
+				print(red("Something went wrong while trying to forward query to next"))
+				return "Bad status code: " + result.status_code
+		except:
+			print(red("Next is not responding to my call..."))
+			return "Exception raised while forwarding query to next"
+
+	elif((hashed_key <= previous_ID and who ==1) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2) or (hashed_key > previous_ID and hashed_key > next_ID and who == 0)):
+		# forward query to prev
+		if config.NDEBUG:
+			print('forwarding query to prev..')
+		try:
+			result = requests.post(config.ADDR + globs.nids[0]["ip"] + ":" + globs.nids[0]["port"] + ends.n_query, json = {"who": who_is, "song": song})
+			if result.status_code == 200:
+				if config.NDEBUG:
+					print("Got response from prev: " + yellow(result.text))
+				return result.text
+			else:
+				print(red("Something went wrong while trying to forward query to prev"))
+				return "Bad status code: " + result.status_code
+		except:
+			print(red("Prev is not responding to my call..."))
+			return "Exception raised while forwarding query to prev"
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+class my_thread(Thread):
+    def __init__(self, group=None, target=None, name=None,
+                 args=(), kwargs={}, Verbose=None):
+        Thread.__init__(self, group, target, name, args, kwargs)
+        self._return = None
+    def run(self):
+        print(type(self._target))
+        if self._target is not None:
+            self._return = self._target(*self._args,
+                                                **self._kwargs)
+    def join(self, *args):
+        Thread.join(self, *args)
+        return self._return
