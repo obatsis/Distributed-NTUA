@@ -169,7 +169,7 @@ def client_overlay():
 			else :
 				return "Something went wrong while trying to start the overlay   Next node doesnt return properly"
 		except:
-		  return "Node " + globs.nids[1]["uid"] + "  " + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + " is not responding"
+		  return "Node " + globs.nids[1]["uid"] + " is not responding"
 
 def node_overlay(r_node):
 	if globs.still_on_chord:
@@ -189,7 +189,7 @@ def node_overlay(r_node):
 			else :
 					return "Something went wrong while trying to start the overlay.... Next node doesent return properly"
 		except:
-		  return "Node " + globs.nids[1]["uid"] + "  " + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + " is not responding"
+		  return "Node " + globs.nids[1]["uid"] + " is not responding"
 
 #  End Overlay Functions
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -402,13 +402,13 @@ def query_song_v2(args):
 		globs.q_responder = who_is["uid"]
 		if config.NDEBUG:
 			print(yellow("Got response directly from the source: ") + who_is["uid"])
-			print(yellow("and it contains: ") + song)
+			print(yellow("and it contains: ") + str(song))
 			print(yellow("sending confirmation to source node"))
-		globs.q_response = song
+		globs.q_response = song["key"]
 		globs.started_query = False
 		globs.got_query_response = True
-		return globs.my_id + " " + song
-		
+		return globs.my_id + " " + song["key"]
+
 	hashed_key = hash(song["key"])
 	if config.NDEBUG:
 		print(yellow("Got request to search for song: {}").format(song))
@@ -426,51 +426,40 @@ def query_song_v2(args):
 	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
 		# song is in me
 		song_to_be_found = found(song["key"])
-		if(song_to_be_found):
-			globs.have_req_song = True
+
+		if globs.started_query:# it means i requested the song, and i am responsible for it
+			globs.q_response = song_to_be_found["value"] if song_to_be_found else "@!@"
+			globs.q_responder = who_is["uid"]
+			globs.started_query = False
+			globs.got_query_response = True
+			if config.NDEBUG:
+				print(cyan("Special case ") + "it was me who made the request and i also have the song")
+				print(yellow("Returning to myself..."))
+			return "sent it to myself"
+
+		if song_to_be_found:# found the song
 			if config.NDEBUG:
 				print(yellow('Found song: {}').format(song_to_be_found))
 			value = song_to_be_found["value"]
-			if globs.started_query:
-				globs.q_response = value
-				globs.q_responder = who_is["uid"]
-				globs.started_query = False
-				globs.got_query_response = True
-				if config.NDEBUG:
-					print(yellow("Special case ") + "it was me who made the request and i also have the song")
-					print(yellow("Returning to myself..."))
-				return "sent it to myself"
-
 			if config.NDEBUG:
 				print("Sending the song to the node who requested it and waiting for response...")
-			try:
-				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": value})
-				if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
-					if config.NDEBUG:
-						print("Got response from the node who requested the song: " + yellow(result.text))
-					return self_ID + " " + value
-				else:
-					print(red("node who requested the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
-					return "Bad status code: " + result.status_code
-			except:
-				print(red("node who requested the song dindnt respond at all"))
-				return "Exception raised node who requested the song dindnt respond "
 		else: # couldnt find song
+			value = "@!@"
 			if config.NDEBUG:
 				print(yellow('Cant find song: {}').format(song))
 				print("Informing the node who requested it that song doesnt exist and waiting for response...")
-			try:
-				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": "@!@"})
-				if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
-					if config.NDEBUG:
-						print("Got response from the node who requested the song: " + yellow(result.text))
-					return self_ID + " @!@"
-				else:
-					print(red("node who requested the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
-					return "Bad status code: " + result.status_code
-			except:
-				print(red("node who requested the song dindnt respond at all"))
-				return "Exception raised node who requested the song dindnt respond"
+		try: # send the value or "@!@" (if the sond doesnt exist) to the node who requested it
+			result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": {"key": value}})
+			if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
+				if config.NDEBUG:
+					print("Got response from the node who requested the song: " + yellow(result.text))
+				return self_ID + value
+			else:
+				print(red("node who requested the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
+				return "Bad status code: " + result.status_code
+		except:
+			print(red("node who requested the song dindnt respond at all"))
+			return "Exception raised node who requested the song dindnt respond"
 
 	elif((hashed_key > self_ID and who == 1) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key < previous_ID and hashed_key <= next_ID and who == 2)):
 		# forward query to next

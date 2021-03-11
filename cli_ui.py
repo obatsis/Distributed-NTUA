@@ -120,7 +120,7 @@ def client(ip, port):
 			try:
 				response = requests.post(baseURL + ends.c_query ,data={'key':fetch_a['key']})
 				if response.status_code == 200 and response.text.split(" ")[1] != "@!@":
-					print("Song found in node with id ",green(response.text.split(" ")[0]))
+					print("Song found in node with id: ",green(response.text.split(" ")[0]))
 					print("Song value: " + green(response.text.split(" ")[1]))
 				else:
 					print(yellow("Couldnt find song..."))
