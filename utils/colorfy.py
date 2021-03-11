@@ -24,7 +24,9 @@ def green(string):
 
 def GREEN(string):
     return '\033[1;92m {}\033[00m'.format(string)
-	
+
+def cyan(string):
+	return '\033[96m {}\033[00m'.format(string)
     # HEADER = '\033[95m'
     # OKBLUE = '\033[94m'
     # OKCYAN = '\033[96m'

@@ -201,7 +201,7 @@ def hash(key):
 def found(key):
 	for item in globs.songs:
 		if item['key'] == key:
-			return(item)
+			return item
 
 def insert_song(args):
 	hashed_key = hash(args["key"])
@@ -219,9 +219,9 @@ def insert_song(args):
 
 	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
 		# song goes in me
-		item = found(args["key"])
-		if(item): # update
-			globs.songs.remove(item)
+		song = found(args["key"])
+		if(song): # update
+			globs.songs.remove(song)
 		globs.songs.append({"key":args["key"], "value":args["value"]}) # inserts the updated pair of (key,value)
 		if config.NDEBUG:
 			print(yellow('Inserted/Updated song: {}').format(args))
@@ -281,11 +281,11 @@ def delete_song(args):
 
 	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
 		# song is in me
-		item = found(args["key"])
-		if(item):
-			globs.songs.remove(item)
+		song = found(args["key"])
+		if(song):
+			globs.songs.remove(song)
 			if config.NDEBUG:
-				print(yellow('Deleted song: {}').format(args))
+				print(yellow('Deleted song: {}').format(song))
 				if config.vNDEBUG:
 					print(yellow("My songs are now:"))
 					print(globs.songs)
@@ -350,12 +350,11 @@ def query_song(args):
 
 	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
 		# song is in me
-		item = found(args["key"])
-		if(item):
+		if(found(args["key"])):
 			if config.NDEBUG:
 				print(yellow('Found song: {}').format(args))
 			# return str(args["value"])
-			return self_ID + " " + item["value"]
+			return self_ID + " " + args["value"]
 
 		else:
 			if config.NDEBUG:
@@ -398,20 +397,22 @@ def query_song(args):
 def query_song_v2(args):
 	song = args["song"]
 	who_is = args["who"]
-	if who_is["uid"] != globs.my_id and globs.started_query: # this means that i got here after the node with the song sent it to me
-		globs.started_query = False
-		globs.got_qresponse = True
-		globs.q_response = song["key"]
+	if who_is["uid"] != globs.my_id and globs.started_query:
+		# i am the node who requested the song and i am here because the node who has the song sent it to me
 		globs.q_responder = who_is["uid"]
 		if config.NDEBUG:
-			print(yellow("Got the response directly from the source node: ") + who_is["uid"])
-			print(yellow("sending him confirmation and unlocking 'got_qresponse' in order for the main thread to unlock"))
-		return globs.my_id + " " + song["key"]
+			print(yellow("Got response directly from the source: ") + who_is["uid"])
+			print(yellow("and it contains: ") + song)
+			print(yellow("sending confirmation to source node"))
+		globs.q_response = song
+		globs.started_query = False
+		globs.got_query_response = True
+		return globs.my_id + " " + song
+		
 	hashed_key = hash(song["key"])
 	if config.NDEBUG:
 		print(yellow("Got request to search for song: {}").format(song))
-		print(yellow("From node: "))
-		print(who_is)
+		print(yellow("From node: ") + who_is["uid"])
 		print(yellow("Song Hash: ") + hashed_key)
 	previous_ID = globs.nids[0]["uid"]
 	next_ID = globs.nids[1]["uid"]
@@ -424,40 +425,53 @@ def query_song_v2(args):
 
 	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
 		# song is in me
-		item = found(song["key"])
-		if(item):
+		song_to_be_found = found(song["key"])
+		if(song_to_be_found):
+			globs.have_req_song = True
 			if config.NDEBUG:
-				print(yellow('Found song: {}').format(song))
-			# return str(song["value"])
-			#send your id and song to the node who started the request...
-			# you know it because thw who_is contains it
-			#wait for response...if he sends you his id and the song everythikg is ok
-			# so you send ok to your prev in order to unlock the chord
-			# if not send a uniue error message
+				print(yellow('Found song: {}').format(song_to_be_found))
+			value = song_to_be_found["value"]
+			if globs.started_query:
+				globs.q_response = value
+				globs.q_responder = who_is["uid"]
+				globs.started_query = False
+				globs.got_query_response = True
+				if config.NDEBUG:
+					print(yellow("Special case ") + "it was me who made the request and i also have the song")
+					print(yellow("Returning to myself..."))
+				return "sent it to myself"
 
-			# it seems to work fine but there is a BUG!!!
-			# when the node who has the song makes the request we have a problem...
-			# he gets stuck in the whilw loop (main thread)
-			# and apparently something bad hammens with the other thread...
-			# possiply there are many threads oppening and something rely bad happens
 			if config.NDEBUG:
 				print("Sending the song to the node who requested it and waiting for response...")
 			try:
-				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": song})
+				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": value})
 				if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
 					if config.NDEBUG:
-						print("Got response from the node who requested the song: " + yellow(result.text.split(" ")[0]))
-					return self_ID + " " + item["value"]
+						print("Got response from the node who requested the song: " + yellow(result.text))
+					return self_ID + " " + value
 				else:
 					print(red("node who requested the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
 					return "Bad status code: " + result.status_code
 			except:
 				print(red("node who requested the song dindnt respond at all"))
 				return "Exception raised node who requested the song dindnt respond "
-		else:
+		else: # couldnt find song
 			if config.NDEBUG:
 				print(yellow('Cant find song: {}').format(song))
-			return "Cant find song"
+				print("Informing the node who requested it that song doesnt exist and waiting for response...")
+			try:
+				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": "@!@"})
+				if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
+					if config.NDEBUG:
+						print("Got response from the node who requested the song: " + yellow(result.text))
+					return self_ID + " @!@"
+				else:
+					print(red("node who requested the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
+					return "Bad status code: " + result.status_code
+			except:
+				print(red("node who requested the song dindnt respond at all"))
+				return "Exception raised node who requested the song dindnt respond"
+
 	elif((hashed_key > self_ID and who == 1) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key < previous_ID and hashed_key <= next_ID and who == 2)):
 		# forward query to next
 		if config.NDEBUG:

@@ -15,7 +15,7 @@ style = style_from_dict({
 
 def client(ip, port):
 	os.system('cls||clear')
-	yellow('What a beautiful day to enter the cult...')
+	cyan('What a beautiful day to enter the cult...')
 	baseURL = 'http://' + ip + ':' + port
 
 	while True:
@@ -35,7 +35,7 @@ def client(ip, port):
 		method_a = prompt(method_q, style=style)['method']
 
 		if method_a == 'Depart from Chord':
-			print(yellow("Preparing Node to depart from Chord..."))
+			print(cyan("Preparing Node to depart from Chord..."))
 			try:
 				response = requests.get(baseURL + ends.c_depart)
 				if response.status_code == 200:
@@ -68,11 +68,11 @@ def client(ip, port):
 			}
 			]
 			fetch_a = prompt(fetch_q, style=style)
-			print(yellow("Inserting Song: ") + fetch_a['key'] + yellow("..."))
+			print(cyan("Inserting Song: ") + fetch_a['key'] + cyan("..."))
 			try:
 				response = requests.post(baseURL + ends.c_insert ,data={'key':fetch_a['key'],'value':fetch_a['value']})
 				if response.status_code == 200:
-					print("Inserted by node with id ",green(response.text))
+					print(cyan("Inserted by node with id: " + green(response.text)))
 				else :
 					print(red("Got a bad response status code " + response.status_code))
 			except:
@@ -92,7 +92,7 @@ def client(ip, port):
 				'filter': lambda val: str(val)
 			}]
 			fetch_a = prompt(fetch_q, style=style)
-			print(yellow("Deleting Song: ") + fetch_a['key'] + yellow("..."))
+			print(cyan("Deleting Song: ") + fetch_a['key'] + cyan("..."))
 			try:
 				response = requests.post(baseURL + ends.c_delete ,data={'key':fetch_a['key']})
 				if response.status_code == 200:
@@ -116,14 +116,14 @@ def client(ip, port):
 				'filter': lambda val: str(val)
 			}]
 			fetch_a = prompt(fetch_q, style=style)
-			print(yellow("Searching Song: ") + fetch_a['key'] + yellow("..."))
+			print(cyan("Searching Song: ") + fetch_a['key'] + cyan("..."))
 			try:
 				response = requests.post(baseURL + ends.c_query ,data={'key':fetch_a['key']})
-				if response.status_code == 200:
+				if response.status_code == 200 and response.text.split(" ")[1] != "@!@":
 					print("Song found in node with id ",green(response.text.split(" ")[0]))
 					print("Song value: " + green(response.text.split(" ")[1]))
 				else:
-					print(red("Got a bad response status code " + response.status_code))
+					print(yellow("Couldnt find song..."))
 			except:
 				print(red("Could not establish connection with Node. Couldnt search for song..."))
 				print(red("Unfortunately exiting..."))
@@ -132,7 +132,7 @@ def client(ip, port):
 			continue
 
 		elif method_a == 'Network Overlay':
-			print(yellow("Initiating Network Overlay..."))
+			print(cyan("Initiating Network Overlay..."))
 			try:
 				response = requests.get(baseURL + ends.c_overlay)
 				if response.status_code == 200:
