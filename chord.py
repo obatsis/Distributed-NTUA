@@ -204,9 +204,24 @@ def found(key):
 			return item
 
 def insert_song(args):
-	hashed_key = hash(args["key"])
+	song = args["song"]
+	who_is = args["who"]
+	if who_is["uid"] != globs.my_id and globs.started_insert:
+		# i am the node who requested the insertion of the song and i am here because the node who has the song sent it to me
+		if config.NDEBUG:
+			print(yellow("Got response directly from the source: ") + who_is["uid"])
+			print(yellow("and it contains: ") + str(song))
+			print(yellow("sending confirmation to source node"))
+		globs.q_responder = who_is["uid"]
+		globs.q_response = song["key"]
+		globs.started_insert = False
+		globs.got_insert_response = True
+		return globs.my_id + " " + song["key"]
+
+	hashed_key = hash(song["key"])
 	if config.NDEBUG:
-		print(yellow("Got request to insert song: {}").format(args))
+		print(yellow("Got request to insert song: {}").format(song))
+		print(yellow("From node: ") + who_is["uid"])
 		print(yellow("Song Hash: ") + hashed_key)
 	previous_ID = globs.nids[0]["uid"]
 	next_ID = globs.nids[1]["uid"]
@@ -217,25 +232,52 @@ def insert_song(args):
 	elif previous_ID < self_ID and next_ID < self_ID:
 		who = 2 # i have the largest id
 
-	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
+	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > previous_ID and hashed_key > self_ID and who == 0) or (hashed_key <= self_ID and who == 0):
 		# song goes in me
-		song = found(args["key"])
-		if(song): # update
-			globs.songs.remove(song)
-		globs.songs.append({"key":args["key"], "value":args["value"]}) # inserts the updated pair of (key,value)
+		song_to_be_inserted = found(song["key"])
+		if(song_to_be_inserted):
+			globs.songs.remove(song_to_be_inserted)
+			if config.NDEBUG:
+				print(yellow('Updating song: {}').format(song_to_be_inserted))
+				print(yellow("To song: 	{}").format(song))
+				if config.vNDEBUG:
+					print(yellow("My songs are now:"))
+					print(globs.songs)
+		globs.songs.append({"key":song["key"], "value":song["value"]}) # inserts the (updated) pair of (key,value)
 		if config.NDEBUG:
-			print(yellow('Inserted/Updated song: {}').format(args))
+			print(yellow('Inserted song: {}').format(song))
 			if config.vNDEBUG:
 				print(yellow("My songs are now:"))
 				print(globs.songs)
-		return self_ID
-	elif((hashed_key > self_ID and who == 1) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key < previous_ID and hashed_key <= next_ID and who == 2)):
+		if globs.started_insert:# it means i requested the insertion of the song, and i am responsible for it
+			globs.q_response = song["key"]
+			globs.q_responder = who_is["uid"]
+			globs.started_insert = False
+			globs.got_insert_response = True
+			if config.NDEBUG:
+				print(cyan("Special case ") + "it was me who made the request and i also have the song")
+				print(yellow("Returning to myself..."))
+			return "sent it to myself"
+		try: # send the key of the song to the node who requested the insertion
+			result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_insert, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": song})
+			if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
+				if config.NDEBUG:
+					print("Got response from the node who requested the insertion of the song: " + yellow(result.text))
+				return self_ID + song["key"]
+			else:
+				print(red("node who requested the insertion of the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
+				return "Bad status code: " + result.status_code
+		except:
+			print(red("node who requested the insertion of the song dindnt respond at all"))
+			return "Exception raised node who requested the insertion of the song dindnt respond"
+
+
+	elif((hashed_key > self_ID and who != 0) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key <= next_ID and who !=0) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2)):
 		# forward song to next
 		if config.NDEBUG:
 			print(yellow('forwarding to next..'))
-		tuple_load = {"key":args["key"], "value":args["value"]}
 		try:
-			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_insert, data = tuple_load)
+			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_insert, json = {"who": who_is, "song": song})
 			if result.status_code == 200:
 				if config.NDEBUG:
 					print("Got response from next: " + yellow(result.text))
@@ -247,28 +289,29 @@ def insert_song(args):
 			print(red("Next is not responding to my call..."))
 			return "Exception raised while forwarding to next"
 		return self_ID
-	elif((hashed_key <= previous_ID and who ==1) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2) or (hashed_key > previous_ID and hashed_key > next_ID and who == 0)):
-		# forward song to prev
-		if config.NDEBUG:
-			print('forwarding to prev..')
-		tuple_load = {"key":args["key"], "value":args["value"]}
-		try:
-			result = requests.post(config.ADDR + globs.nids[0]["ip"] + ":" + globs.nids[0]["port"] + ends.n_insert, data = tuple_load)
-			if result.status_code == 200:
-				if config.NDEBUG:
-					print("Got response from prev: " + yellow(result.text))
-				return result.text
-			else:
-				print(red("Something went wrong while trying to forward insert to prev"))
-				return "Bad status code: " + result.status_code
-		except:
-			print(red("Prev is not responding to my call..."))
-			return "Exception raised while forwarding to prev"
+	else :
+		print(red("The key hash didnt match any node...consider thinking again about your skills"))
+		return "Bad skills"
 
 def delete_song(args):
-	hashed_key = hash(args["key"])
+	song = args["song"]
+	who_is = args["who"]
+	if who_is["uid"] != globs.my_id and globs.started_delete:
+		# i am the node who requested the deletion of the song and i am here because the node who has the song sent it to me
+		if config.NDEBUG:
+			print(yellow("Got response directly from the source: ") + who_is["uid"])
+			print(yellow("and it contains: ") + str(song))
+			print(yellow("sending confirmation to source node"))
+		globs.q_responder = who_is["uid"]
+		globs.q_response = song["key"]
+		globs.started_delete = False
+		globs.got_delete_response = True
+		return globs.my_id + " " + song["key"]
+
+	hashed_key = hash(song["key"])
 	if config.NDEBUG:
-		print(yellow("Got request to delete song: {}").format(args))
+		print(yellow("Got request to delete song: {}").format(song))
+		print(yellow("From node: ") + who_is["uid"])
 		print(yellow("Song Hash: ") + hashed_key)
 	previous_ID = globs.nids[0]["uid"]
 	next_ID = globs.nids[1]["uid"]
@@ -278,32 +321,53 @@ def delete_song(args):
 		who = 0	# i have the samallest id
 	elif previous_ID < self_ID and next_ID < self_ID:
 		who = 2 # i have the largest id
-
-	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
+	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > previous_ID and hashed_key > self_ID and who == 0) or (hashed_key <= self_ID and who == 0):
 		# song is in me
-		song = found(args["key"])
-		if(song):
-			globs.songs.remove(song)
+		song_to_be_deleted = found(song["key"])
+		if(song_to_be_deleted):
+			globs.songs.remove(song_to_be_deleted)
 			if config.NDEBUG:
 				print(yellow('Deleted song: {}').format(song))
 				if config.vNDEBUG:
 					print(yellow("My songs are now:"))
 					print(globs.songs)
-			return "Removed by node " + self_ID
+			value = song_to_be_deleted["key"]
 		else:
 			if config.NDEBUG:
-				print(yellow('Cant find song: {}').format(args))
+				print(yellow('Cant find song: {}').format(song))
 				print(yellow('Unable to delete'))
 				if config.vNDEBUG:
 					print(yellow("My songs are now:"))
 					print(globs.songs)
-			return 'Cant find song, unable to delete it'
-	elif((hashed_key > self_ID and who == 1) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key < previous_ID and hashed_key <= next_ID and who == 2)):
+			value = "@!@"
+		if globs.started_delete:# it means i requested the deletion of the song, and i am responsible for it
+			globs.q_response = song_to_be_deleted["value"] if song_to_be_deleted else "@!@"
+			globs.q_responder = who_is["uid"]
+			globs.started_delete = False
+			globs.got_delete_response = True
+			if config.NDEBUG:
+				print(cyan("Special case ") + "it was me who made the request and i also have the song")
+				print(yellow("Returning to myself..."))
+			return "sent it to myself"
+		try: # send the value (key of the song) or "@!@" (if the sond doesnt exist) to the node who requested the deletion
+			result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_delete, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": {"key": value}})
+			if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
+				if config.NDEBUG:
+					print("Got response from the node who requested the deletion of the song: " + yellow(result.text))
+				return self_ID + value
+			else:
+				print(red("node who requested the deletion of the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
+				return "Bad status code: " + result.status_code
+		except:
+			print(red("node who requested the deletion of the song dindnt respond at all"))
+			return "Exception raised node who requested the deletion of the song dindnt respond"
+
+	elif((hashed_key > self_ID and who != 0) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key <= next_ID and who !=0) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2)):
 		# forward delete to next
 		if config.NDEBUG:
 			print(yellow('forwarding delete to next..'))
 		try:
-			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_delete, data = {"key": args["key"]})
+			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_delete, json = {"who": who_is, "song": {"key": song["key"]}})
 			if result.status_code == 200:
 				if config.NDEBUG:
 					print("Got response from next: " + yellow(result.text))
@@ -314,96 +378,20 @@ def delete_song(args):
 		except:
 			print(red("Next is not responding to my call..."))
 			return "Exception raised while forwarding delete to next"
-
-	elif((hashed_key <= previous_ID and who ==1) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2) or (hashed_key > previous_ID and hashed_key > next_ID and who == 0)):
-		# forward song to prev
-		if config.NDEBUG:
-			print('forwarding delete to prev..')
-		try:
-			result = requests.post(config.ADDR + globs.nids[0]["ip"] + ":" + globs.nids[0]["port"] + ends.n_delete, data = {"key":args["key"]})
-			if result.status_code == 200:
-				if config.NDEBUG:
-					print("Got response from prev: " + yellow(result.text))
-				return result.text
-			else:
-				print(red("Something went wrong while trying to forward delete to prev"))
-				return "Bad status code: " + result.status_code
-		except:
-			print(red("Prev is not responding to my call..."))
-			return "Exception raised while forwarding delete to prev"
+	else :
+		print(red("The key hash didnt match any node...consider thinking again about your skills"))
+		return "Bad skills"
 
 def query_song(args):
-	hashed_key = hash(args["key"])
-	if config.NDEBUG:
-		print(yellow("Got request to search for song: {}").format(args))
-		print(yellow("Song Hash: ") + hashed_key)
-	previous_ID = globs.nids[0]["uid"]
-	next_ID = globs.nids[1]["uid"]
-	self_ID = globs.my_id
-	who = 1
-	if previous_ID > self_ID and next_ID > self_ID:
-		who = 0	# i have the samallest id
-	elif previous_ID < self_ID and next_ID < self_ID:
-		who = 2 # i have the largest id
-	# if(args["key"] == '*'):
-	# 	return (json.dumps({'matrix_of_items':matrix_of_items}))
-
-	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
-		# song is in me
-		if(found(args["key"])):
-			if config.NDEBUG:
-				print(yellow('Found song: {}').format(args))
-			# return str(args["value"])
-			return self_ID + " " + args["value"]
-
-		else:
-			if config.NDEBUG:
-				print(yellow('Cant find song: {}').format(args))
-			return "Cant find song"
-	elif((hashed_key > self_ID and who == 1) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key < previous_ID and hashed_key <= next_ID and who == 2)):
-		# forward delete to next
-		if config.NDEBUG:
-			print(yellow('forwarding query to next..'))
-		try:
-			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_query, data = {"key": args["key"]})
-			if result.status_code == 200:
-				if config.NDEBUG:
-					print("Got response from next: " + yellow(result.text))
-				return result.text
-			else:
-				print(red("Something went wrong while trying to forward query to next"))
-				return "Bad status code: " + result.status_code
-		except:
-			print(red("Next is not responding to my call..."))
-			return "Exception raised while forwarding query to next"
-
-	elif((hashed_key <= previous_ID and who ==1) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2) or (hashed_key > previous_ID and hashed_key > next_ID and who == 0)):
-		# forward song to prev
-		if config.NDEBUG:
-			print('forwarding query to prev..')
-		try:
-			result = requests.post(config.ADDR + globs.nids[0]["ip"] + ":" + globs.nids[0]["port"] + ends.n_query, data = {"key":args["key"]})
-			if result.status_code == 200:
-				if config.NDEBUG:
-					print("Got response from prev: " + yellow(result.text))
-				return result.text
-			else:
-				print(red("Something went wrong while trying to forward query to prev"))
-				return "Bad status code: " + result.status_code
-		except:
-			print(red("Prev is not responding to my call..."))
-			return "Exception raised while forwarding query to prev"
-
-def query_song_v2(args):
 	song = args["song"]
 	who_is = args["who"]
 	if who_is["uid"] != globs.my_id and globs.started_query:
 		# i am the node who requested the song and i am here because the node who has the song sent it to me
-		globs.q_responder = who_is["uid"]
 		if config.NDEBUG:
 			print(yellow("Got response directly from the source: ") + who_is["uid"])
 			print(yellow("and it contains: ") + str(song))
 			print(yellow("sending confirmation to source node"))
+		globs.q_responder = who_is["uid"]
 		globs.q_response = song["key"]
 		globs.started_query = False
 		globs.got_query_response = True
@@ -423,7 +411,7 @@ def query_song_v2(args):
 	elif previous_ID < self_ID and next_ID < self_ID:
 		who = 2 # i have the largest id
 
-	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
+	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > previous_ID and hashed_key > self_ID and who == 0) or (hashed_key <= self_ID and who == 0):
 		# song is in me
 		song_to_be_found = found(song["key"])
 
@@ -440,14 +428,13 @@ def query_song_v2(args):
 		if song_to_be_found:# found the song
 			if config.NDEBUG:
 				print(yellow('Found song: {}').format(song_to_be_found))
-			value = song_to_be_found["value"]
-			if config.NDEBUG:
 				print("Sending the song to the node who requested it and waiting for response...")
+			value = song_to_be_found["value"]
 		else: # couldnt find song
-			value = "@!@"
 			if config.NDEBUG:
 				print(yellow('Cant find song: {}').format(song))
 				print("Informing the node who requested it that song doesnt exist and waiting for response...")
+			value = "@!@"
 		try: # send the value or "@!@" (if the sond doesnt exist) to the node who requested it
 			result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": {"key": value}})
 			if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
@@ -461,7 +448,7 @@ def query_song_v2(args):
 			print(red("node who requested the song dindnt respond at all"))
 			return "Exception raised node who requested the song dindnt respond"
 
-	elif((hashed_key > self_ID and who == 1) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key < previous_ID and hashed_key <= next_ID and who == 2)):
+	elif((hashed_key > self_ID and who != 0) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key <= next_ID and who !=0) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2)):
 		# forward query to next
 		if config.NDEBUG:
 			print(yellow('forwarding query to next..'))
@@ -478,22 +465,9 @@ def query_song_v2(args):
 			print(red("Next is not responding to my call..."))
 			return "Exception raised while forwarding query to next"
 
-	elif((hashed_key <= previous_ID and who ==1) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2) or (hashed_key > previous_ID and hashed_key > next_ID and who == 0)):
-		# forward query to prev
-		if config.NDEBUG:
-			print('forwarding query to prev..')
-		try:
-			result = requests.post(config.ADDR + globs.nids[0]["ip"] + ":" + globs.nids[0]["port"] + ends.n_query, json = {"who": who_is, "song": song})
-			if result.status_code == 200:
-				if config.NDEBUG:
-					print("Got response from prev: " + yellow(result.text))
-				return result.text
-			else:
-				print(red("Something went wrong while trying to forward query to prev"))
-				return "Bad status code: " + result.status_code
-		except:
-			print(red("Prev is not responding to my call..."))
-			return "Exception raised while forwarding query to prev"
+	else :
+		print(red("The key hash didnt match any node...consider thinking again about your skills"))
+		return "Bad skills"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
