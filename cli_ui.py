@@ -15,7 +15,7 @@ style = style_from_dict({
 
 def client(ip, port):
 	os.system('cls||clear')
-	yellow('What a beautiful day to enter the cult...')
+	cyan('What a beautiful day to enter the cult...')
 	baseURL = 'http://' + ip + ':' + port
 
 	while True:
@@ -29,13 +29,14 @@ def client(ip, port):
 						'Search for a Song', \
 						'Delete a Song', \
 						'Depart from Chord', \
+						'Run automated test', \
 						'Help', \
 						'Exit']
 		}
 		method_a = prompt(method_q, style=style)['method']
-
+		os.system('cls||clear')
 		if method_a == 'Depart from Chord':
-			print(yellow("Preparing Node to depart from Chord..."))
+			print(cyan("Preparing Node to depart from Chord..."))
 			try:
 				response = requests.get(baseURL + ends.c_depart)
 				if response.status_code == 200:
@@ -68,11 +69,11 @@ def client(ip, port):
 			}
 			]
 			fetch_a = prompt(fetch_q, style=style)
-			print(yellow("Inserting Song: ") + fetch_a['key'] + yellow("..."))
+			print(cyan("Inserting Song: ") + fetch_a['key'] + cyan("..."))
 			try:
 				response = requests.post(baseURL + ends.c_insert ,data={'key':fetch_a['key'],'value':fetch_a['value']})
 				if response.status_code == 200:
-					print("Inserted by node with id ",green(response.text))
+					print(cyan("Inserted by node with id: ") + green(response.text.split(" ")[0]))
 				else :
 					print(red("Got a bad response status code " + response.status_code))
 			except:
@@ -92,13 +93,15 @@ def client(ip, port):
 				'filter': lambda val: str(val)
 			}]
 			fetch_a = prompt(fetch_q, style=style)
-			print(yellow("Deleting Song: ") + fetch_a['key'] + yellow("..."))
+			print(cyan("Deleting Song: ") + fetch_a['key'] + cyan("..."))
 			try:
 				response = requests.post(baseURL + ends.c_delete ,data={'key':fetch_a['key']})
-				if response.status_code == 200:
-					print(green(response.text))
+				if response.status_code == 200 and response.text.split(" ")[1] != "@!@":
+					# print(cyan("Deleting Song: ") + green(response.text.split(" ")[1]) + )
+					print(cyan("Deleted by node with id: ") + green(response.text.split(" ")[0]))
 				else :
-					print(red("Got a bad response status code " + response.status_code))
+					print(yellow("Song doesnt exist in the Chord"))
+					print(yellow("Couldnt delete it"))
 			except:
 				print(red("Could not establish connection with Node. Song wasnt deleted..."))
 				print(red("Unfortunately exiting..."))
@@ -116,14 +119,14 @@ def client(ip, port):
 				'filter': lambda val: str(val)
 			}]
 			fetch_a = prompt(fetch_q, style=style)
-			print(yellow("Searching Song: ") + fetch_a['key'] + yellow("..."))
+			print(cyan("Searching Song: ") + fetch_a['key'] + cyan("..."))
 			try:
 				response = requests.post(baseURL + ends.c_query ,data={'key':fetch_a['key']})
-				if response.status_code == 200:
-					print("Song found in node with id ",green(response.text.split(" ")[0]))
+				if response.status_code == 200 and response.text.split(" ")[1] != "@!@":
+					print("Song found in node with id: ",green(response.text.split(" ")[0]))
 					print("Song value: " + green(response.text.split(" ")[1]))
 				else:
-					print(red("Got a bad response status code " + response.status_code))
+					print(yellow("Song doesnt exist in the Chord"))
 			except:
 				print(red("Could not establish connection with Node. Couldnt search for song..."))
 				print(red("Unfortunately exiting..."))
@@ -132,7 +135,7 @@ def client(ip, port):
 			continue
 
 		elif method_a == 'Network Overlay':
-			print(yellow("Initiating Network Overlay..."))
+			print(cyan("Initiating Network Overlay..."))
 			try:
 				response = requests.get(baseURL + ends.c_overlay)
 				if response.status_code == 200:
@@ -164,12 +167,34 @@ def client(ip, port):
 
 			continue
 
+		elif method_a == 'Run automated test':
+			print('Select method (s = standard, r = random)')
+			fetch_q = [
+			{
+				'type': 'input',
+				'name': 'key',
+				'message': 'Method:',
+				'filter': lambda val: str(val)
+			}]
+			fetch_a = prompt(fetch_q, style=style)
+			method = fetch_a['key'] if fetch_a['key'] else 's'
+			if method not in ('s', 'r'):
+				print(yellow("Wrong parameter (give 's' or 'r')"))
+				continue
+			print(cyan("Running automated tests with method: ") + method + cyan("..."))
+			# call the module to insert/delete/search songs from one node or from random nodes
+			# depending the 'method'. Then save the output to a txt file with accending version name
+
+
+
+			continue
+
 		elif method_a == 'Exit':
 			os.system('cls||clear')
-
 			break
 
 		else:
+			os.system('cls||clear')
 			continue
 
 if __name__ == '__main__':

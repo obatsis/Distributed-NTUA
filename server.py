@@ -9,7 +9,8 @@ import config
 from utils.colorfy import *
 import globs
 import ends
-
+import threading
+import time
 app = Flask(__name__)
 
 @app.route('/',methods = ['GET'])												# root directory (useless)
@@ -33,20 +34,63 @@ def cli_depart():
 @app.route(ends.c_insert ,methods = ['POST'])										# cli (client) operation insert
 def cli_insert():
 	pair = request.form.to_dict()
-	result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_insert, data = pair)
-	return result.text
+	globs.started_insert = True
+	x = threading.Thread(target=insert_t ,args = [pair])
+	x.start()
+	while not(globs.got_insert_response):
+		if config.NDEBUG:
+			print(yellow("Waiting for insert respose..."))
+		time.sleep(0.5)
+	globs.got_insert_response = True
+	if config.NDEBUG:
+		print(yellow("Got response, returning value to cli"))
+	time.sleep(0.1)
+	return globs.q_responder + " " + globs.q_response
+	x.join()
+
+def insert_t(pair):
+	return insert_song({"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
 
 @app.route(ends.c_delete ,methods = ['POST'])										# cli (client) operation delete
 def cli_delete():
 	pair = request.form.to_dict()
-	result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_delete, data = pair)
-	return result.text
+	globs.started_delete = True
+	x = threading.Thread(target=delete_t ,args = [pair])
+	x.start()
+	while not(globs.got_delete_response):
+		if config.NDEBUG:
+			print(yellow("Waiting for delete respose..."))
+		time.sleep(0.5)
+	globs.got_delete_response = True
+	if config.NDEBUG:
+		print(yellow("Got response, returning value to cli"))
+	time.sleep(0.1)
+	return globs.q_responder + " " + globs.q_response
+	x.join()
+
+def delete_t(pair):
+	return delete_song({"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
+
 
 @app.route(ends.c_query ,methods = ['POST'])										# cli (client) operation query
 def cli_query():
 	pair = request.form.to_dict()
-	result = requests.post(config.ADDR + globs.my_ip + ":" + globs.my_port + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
-	return result.text
+	globs.started_query = True
+	x = threading.Thread(target=query_t ,args = [pair])
+	x.start()
+	while not(globs.got_query_response):
+		if config.NDEBUG:
+			print(yellow("Waiting for query respose..."))
+		time.sleep(0.5)
+	globs.got_query_response = True
+	if config.NDEBUG:
+		print(yellow("Got response, returning value to cli"))
+	time.sleep(0.1)
+	return globs.q_responder + " " + globs.q_response
+	x.join()
+
+def query_t(pair):
+	return query_song({"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
 
 @app.route(ends.n_overlay ,methods = ['POST'])									# chord operation network overlay
 def chord_over():
@@ -56,12 +100,12 @@ def chord_over():
 
 @app.route(ends.n_insert ,methods = ['POST'])								# chord operation insert(key.value)
 def chord_insert():
-	result = request.form.to_dict()
+	result = request.get_json()
 	return insert_song(result)
 
 @app.route(ends.n_delete ,methods = ['POST'])									# chord operation delete(key)
 def chord_delete():
-	result = request.form.to_dict()
+	result = request.get_json()
 	return delete_song(result)
 
 @app.route(ends.n_query ,methods = ['POST'])									# chord operation query(key)
