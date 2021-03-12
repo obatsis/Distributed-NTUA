@@ -155,6 +155,11 @@ def node_update_list(new_neighbours):
 		print(globs.nids[1])
 	return "new neighbours set"
 
+
+def boot_send_nodes_list():
+	for node in globs.mids:
+		res += node["ip"] + ":" + node["port"] + " "
+	return res
 # End Node Functios
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Overlay Functions

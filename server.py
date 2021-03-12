@@ -134,6 +134,10 @@ def boot_depart():
 	d_node = request.form.to_dict()
 	return boot_depart_func(d_node)
 
+@app.route(ends.b_list ,methods = ['GET'])									# send nodesList
+def boot_sendList():
+	return boot_send_nodes_list()
+
 def server():
 	print("\n")
 	if len(sys.argv) < 3:

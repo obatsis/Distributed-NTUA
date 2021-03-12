@@ -36,3 +36,6 @@ b_join = '/boot/join'
 
 global b_depart # POST: removes node from the Chord {node id, ip, port}
 b_depart = '/boot/depart'
+
+global b_list # GET: returns the list of all nodes (ip:port ip:port ....)
+b_list = '/boot/listNodes'
