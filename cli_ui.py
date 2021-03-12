@@ -5,7 +5,8 @@ import sys
 import ends
 import config
 from utils.colorfy import *
-from transactions.testing import test_trans
+from auto.testing import test_trans
+import time
 style = style_from_dict({
 	Token.QuestionMark: '#E91E63 bold',
 	Token.Selected: '#673AB7 bold',
@@ -169,7 +170,7 @@ def client(ip, port):
 			continue
 
 		elif method_a == 'Run automated test':
-			print('Select method (s = standard, r = random) and number of test (1,2,3)')
+			print('Select number of test (1 = insert, 2 = query, 3 = requests)')
 			fetch_q = [
 			{
 				'type': 'input',
@@ -184,8 +185,10 @@ def client(ip, port):
 				print(yellow("Wrong Test number (give 1, 2 or 3)"))
 				continue
 			print(cyan("Running automated test number: ") + test_number + cyan("..."))
+			start_time = time.time()
 			test_trans(test_number)
-
+			print(green("--- %s seconds ---") % (time.time() - start_time))
+			print(cyan("Done!"))
 			continue
 
 		elif method_a == 'Exit':
