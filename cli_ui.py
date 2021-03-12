@@ -5,7 +5,7 @@ import sys
 import ends
 import config
 from utils.colorfy import *
-from auto.testing import test_trans
+from transactions.testing import test_trans
 style = style_from_dict({
 	Token.QuestionMark: '#E91E63 bold',
 	Token.Selected: '#673AB7 bold',
@@ -173,32 +173,18 @@ def client(ip, port):
 			fetch_q = [
 			{
 				'type': 'input',
-				'name': 'meth',
-				'message': 'Method:',
-				'filter': lambda val: str(val)
-			},
-			{
-				'type': 'input',
 				'name': 'test_n',
 				'message': 'Test:',
 				'filter': lambda val: str(val)
 			}
 			]
 			fetch_a = prompt(fetch_q, style=style)
-			method = fetch_a['meth'] if fetch_a['meth'] else 's'
 			test_number = fetch_a['test_n'] if fetch_a['test_n'] else 's'
-			if method not in ('s', 'r'):
-				print(yellow("Wrong Method (give s or r)"))
-				continue
 			if test_number not in ('1', '2', '3'):
 				print(yellow("Wrong Test number (give 1, 2 or 3)"))
 				continue
-			print(cyan("Running automated test number {} with method: ").format(test_number) + method + cyan("..."))
-			test_trans(test_number, method)
-			# call the module to insert/delete/search songs from one node or from random nodes
-			# depending the 'method'. Then save the output to a txt file with accending version name
-
-
+			print(cyan("Running automated test number: ") + test_number + cyan("..."))
+			test_trans(test_number)
 
 			continue
 

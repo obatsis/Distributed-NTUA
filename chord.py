@@ -157,9 +157,12 @@ def node_update_list(new_neighbours):
 
 
 def boot_send_nodes_list():
-	for node in globs.mids:
-		res += node["ip"] + ":" + node["port"] + " "
-	return res
+	if globs.boot:
+		res = ''
+		for node in globs.mids:
+			res += node["ip"] + ":" + node["port"] + " "
+		print(yellow("Sending nodes: ") + res)
+		return res
 # End Node Functios
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Overlay Functions
