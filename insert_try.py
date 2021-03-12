@@ -134,7 +134,7 @@ def insert_song(args):
         		except:
         			print(red("node who requested the insertion of the song dindnt respond at all"))
         			return "Exception raised node who requested the insertion of the song dindnt respond"
-                    
+
                 t.join()
 
 	elif((hashed_key > self_ID and who != 0) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key <= next_ID and who !=0) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2)):
@@ -157,107 +157,3 @@ def insert_song(args):
 	else :
 		print(red("The key hash didnt match any node...consider thinking again about your skills"))
 		return "Bad skills"
-
-def insert_song_v2(args):
-    song = args["song"]
-	who_is = args["who"]
-	if who_is["uid"] != globs.my_id and globs.started_insert:
-		# i am the node who requested the song and i am here because the node who has the song sent it to me
-		globs.in_responder = who_is["uid"]
-		if config.NDEBUG:
-			print(yellow("Got response directly from the source: ") + who_is["uid"])
-			print(yellow("and it contains: ") + song)
-			print(yellow("sending confirmation to source node"))
-		globs.in_response = song
-		globs.started_insert = False
-		globs.got_insert_response = True
-		return globs.my_id + " " + song
-	hashed_key = hash(song["key"])
-	if config.NDEBUG:
-		print(yellow("Got request to insert song: {}").format(song))
-        print(yellow("From node: ") + who_is["uid"])
-		print(yellow("Song Hash: ") + hashed_key)
-	previous_ID = globs.nids[0]["uid"]
-	next_ID = globs.nids[1]["uid"]
-	self_ID = globs.my_id
-	who = 1
-	if previous_ID > self_ID and next_ID > self_ID:
-		who = 0	# i have the samallest id
-	elif previous_ID < self_ID and next_ID < self_ID:
-		who = 2 # i have the largest id
-
-	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > self_ID and hashed_key > next_ID and who == 2) or (hashed_key <= self_ID and who == 0):
-		# song goes in me
-		song_to_be_found = found(song["key"])
-		if(song_to_be_found):
-            if config.NDEBUG:
-				print(yellow('Found song: {}').format(song_to_be_found))
-			globs.songs.remove(song)
-		globs.songs.append({"key":song["key"], "value":song["value"]}) # inserts the updated pair of (key,value)
-        if globs.started_insert:
-				globs.in_response = song
-				globs.in_responder = who_is["uid"]
-				globs.started_insert = False
-				globs.got_insert_response = True
-				if config.NDEBUG:
-					print(yellow("Special case ") + "it was me who made the request and i also have to insert the song")
-					print(yellow("Returning to myself..."))
-				return "sent it to myself"
-                ### consistensy
-		if (globs.consistency == "eventual" and globs.k != 1): # k, consistency πως θα τα εισαγουμε
-                ploads = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port},"song":{"key":args["key"], "value":args["value"]}, "chain_length":{"k":k-1}}
-                t = Thread(target=eventual_insert, args=[ploads])
-                t.start()
-                #while not(globs.got_insert_eventual_response):
-                #    if config.NDEBUG:
-            	#		print(yellow("Waiting for query respose..."))
-            	#	time.sleep(0.5)
-                #globs.got_insert_eventual_response = True
-                #time.sleep(0.2)
-                if config.NDEBUG:
-                    print("Sending the song to the node who requested it and waiting for response...")
-				try:
-					result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_insert, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": value})
-			    	if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
-				    	if config.NDEBUG:
-					    	print("Got response from the node who requested the song: " + yellow(result.text))
-					    return self_ID + " " + song
-		     		else:
-			    		print(red("node who requested the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
-				    	return "Bad status code: " + result.status_code
-                except:
-			            print(red("node who requested the song dindnt respond at all"))
-    			    	return "Exception raised node who requested the song dindnt respond "
-                t.join()
-	elif((hashed_key > self_ID and who == 1) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key < previous_ID and hashed_key <= next_ID and who == 2)):
-		# forward song to next
-		if config.NDEBUG:
-			print(yellow('forwarding to next..'))
-        try:
-			result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_insert, json = {"who": who_is, "song": song})
-			if result.status_code == 200:
-				if config.NDEBUG:
-					print("Got response from next: " + yellow(result.text))
-				return result.text
-			else:
-				print(red("Something went wrong while trying to forward insert to next"))
-				return "Bad status code: " + result.status_code
-		except:
-			print(red("Next is not responding to my call..."))
-			return "Exception raised while forwarding to next"
-	elif((hashed_key <= previous_ID and who ==1) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2) or (hashed_key > previous_ID and hashed_key > next_ID and who == 0)):
-		# forward song to prev
-		if config.NDEBUG:
-			print('forwarding to prev..')
-		try:
-			result = requests.post(config.ADDR + globs.nids[0]["ip"] + ":" + globs.nids[0]["port"] + ends.n_insert, json = {"who": who_is, "song": song})
-			if result.status_code == 200:
-				if config.NDEBUG:
-					print("Got response from prev: " + yellow(result.text))
-				return result.text
-			else:
-				print(red("Something went wrong while trying to forward insert to prev"))
-				return "Bad status code: " + result.status_code
-		except:
-			print(red("Prev is not responding to my call..."))
-			return "Exception raised while forwarding to prev"
