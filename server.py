@@ -27,11 +27,11 @@ def cli_info():
 def cli_over():
 	return client_overlay()
 
-@app.route(ends.c_depart ,methods = ['GET'])										# cli (client) operation depart
+@app.route(ends.c_depart ,methods = ['GET'])									# cli (client) operation depart
 def cli_depart():
 	return cli_depart_func()
 
-@app.route(ends.c_insert ,methods = ['POST'])										# cli (client) operation insert
+@app.route(ends.c_insert ,methods = ['POST'])									# cli (client) operation insert
 def cli_insert():
 	pair = request.form.to_dict()
 	globs.started_insert = True
@@ -40,18 +40,18 @@ def cli_insert():
 	while not(globs.got_insert_response):
 		if config.NDEBUG:
 			print(yellow("Waiting for insert respose..."))
-		time.sleep(0.5)
+		time.sleep(0.1)
 	globs.got_insert_response = True
 	if config.NDEBUG:
 		print(yellow("Got response, returning value to cli"))
-	time.sleep(0.1)
+	time.sleep(0.15)
 	return globs.q_responder + " " + globs.q_response
 	x.join()
 
 def insert_t(pair):
 	return insert_song({"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
 
-@app.route(ends.c_delete ,methods = ['POST'])										# cli (client) operation delete
+@app.route(ends.c_delete ,methods = ['POST'])									# cli (client) operation delete
 def cli_delete():
 	pair = request.form.to_dict()
 	globs.started_delete = True
@@ -60,11 +60,11 @@ def cli_delete():
 	while not(globs.got_delete_response):
 		if config.NDEBUG:
 			print(yellow("Waiting for delete respose..."))
-		time.sleep(0.5)
+		time.sleep(0.1)
 	globs.got_delete_response = True
 	if config.NDEBUG:
 		print(yellow("Got response, returning value to cli"))
-	time.sleep(0.1)
+	time.sleep(0.15)
 	return globs.q_responder + " " + globs.q_response
 	x.join()
 
@@ -72,7 +72,7 @@ def delete_t(pair):
 	return delete_song({"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
 
 
-@app.route(ends.c_query ,methods = ['POST'])										# cli (client) operation query
+@app.route(ends.c_query ,methods = ['POST'])									# cli (client) operation query
 def cli_query():
 	pair = request.form.to_dict()
 	globs.started_query = True
@@ -81,18 +81,18 @@ def cli_query():
 	while not(globs.got_query_response):
 		if config.NDEBUG:
 			print(yellow("Waiting for query respose..."))
-		time.sleep(0.5)
+		time.sleep(0.1)
 	globs.got_query_response = True
 	if config.NDEBUG:
 		print(yellow("Got response, returning value to cli"))
-	time.sleep(0.1)
+	time.sleep(0.15)
 	return globs.q_responder + " " + globs.q_response
 	x.join()
 
 def query_t(pair):
 	return query_song({"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
 
-@app.route(ends.c_query_star ,methods = ['POST'])								# cli (client) operation query *
+@app.route(ends.c_query_star ,methods = ['GET'])								# cli (client) operation query *
 def cli_query_star():
 	globs.started_query_star = True
 	x = threading.Thread(target=query_star_t ,args = [])
@@ -100,17 +100,19 @@ def cli_query_star():
 	while not(globs.got_query_star_response):
 		if config.NDEBUG:
 			print(yellow("Waiting for query_star respose..."))
-		time.sleep(0.5)
+		time.sleep(0.1)
 	globs.got_query_star_response = True
 	if config.NDEBUG:
 		print(yellow("Got response, returning value to cli"))
-	# time.sleep(0.1)
-	# return globs.q_responder + " " + globs.q_response
-	return
+	return globs.q_star_response
 	x.join()
 
-def query_star_t(pair):
-	return query_star_song()
+def query_star_t():
+	initial_dict = {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}
+	initial_dict["song"] = globs.songs
+	dict_to_send = {"res": []}
+	dict_to_send["res"].append(initial_dict)
+	return query_star_song(dict_to_send)
 
 
 @app.route(ends.n_overlay ,methods = ['POST'])									# chord operation network overlay
@@ -119,7 +121,7 @@ def chord_over():
 	return node_overlay(r_node)
 
 
-@app.route(ends.n_insert ,methods = ['POST'])								# chord operation insert(key.value)
+@app.route(ends.n_insert ,methods = ['POST'])									# chord operation insert(key.value)
 def chord_insert():
 	result = request.get_json()
 	return insert_song(result)
@@ -134,8 +136,12 @@ def chord_query():
 	result = request.get_json()
 	return query_song(result)
 
+@app.route(ends.n_query_star ,methods = ['POST'])								# chord operation query *
+def chord_query_star():
+	result = request.get_json()
+	return query_star_song(result)
 
-@app.route(ends.n_update_peers ,methods = ['POST'])									# update(nodeID)
+@app.route(ends.n_update_peers ,methods = ['POST'])								# update(nodeID)
 def chord_updateList():
 	new_neighbours = request.get_json()
 	return node_update_list(new_neighbours)
@@ -155,7 +161,7 @@ def boot_depart():
 	d_node = request.form.to_dict()
 	return boot_depart_func(d_node)
 
-@app.route(ends.b_list ,methods = ['GET'])									# send nodesList
+@app.route(ends.b_list ,methods = ['GET'])										# send nodesList
 def boot_sendList():
 	return boot_send_nodes_list()
 
