@@ -419,6 +419,9 @@ def query_song(args):
 	elif previous_ID < self_ID and next_ID < self_ID:
 		who = 2 # i have the largest id
 
+	if song["key"] == "*":
+		pass
+
 	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > previous_ID and hashed_key > self_ID and who == 0) or (hashed_key <= self_ID and who == 0):
 		# song is in me
 		song_to_be_found = found(song["key"])

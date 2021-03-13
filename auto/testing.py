@@ -77,7 +77,6 @@ def test_trans(test_number):
 			line = line.strip()
 			parts = line.split(",")
 			to_node = random.choice(nodes)
-			time.sleep(0.3)
 			if parts[0] == "insert":
 				if config.TDEBUG:
 					print(cyan("Inserting song: ") + parts[1] + cyan(" with value: ") + parts[2].rstrip("\n") + cyan(" to node: ") + to_node)
