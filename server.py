@@ -92,6 +92,10 @@ def cli_query():
 def query_t(pair):
 	return query_song({"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
 
+@app.route(ends.c_query_star ,methods = ['GET'])								# cli (client) operation query *
+def cli_query_star():
+	pass
+
 @app.route(ends.n_overlay ,methods = ['POST'])									# chord operation network overlay
 def chord_over():
 	r_node = request.form.to_dict()
@@ -133,6 +137,10 @@ def boot_join():
 def boot_depart():
 	d_node = request.form.to_dict()
 	return boot_depart_func(d_node)
+
+@app.route(ends.b_list ,methods = ['GET'])									# send nodesList
+def boot_sendList():
+	return boot_send_nodes_list()
 
 def server():
 	print("\n")

@@ -5,6 +5,8 @@ import sys
 import ends
 import config
 from utils.colorfy import *
+from auto.testing import test_trans
+import time
 style = style_from_dict({
 	Token.QuestionMark: '#E91E63 bold',
 	Token.Selected: '#673AB7 bold',
@@ -119,18 +121,32 @@ def client(ip, port):
 				'filter': lambda val: str(val)
 			}]
 			fetch_a = prompt(fetch_q, style=style)
-			print(cyan("Searching Song: ") + fetch_a['key'] + cyan("..."))
-			try:
-				response = requests.post(baseURL + ends.c_query ,data={'key':fetch_a['key']})
-				if response.status_code == 200 and response.text.split(" ")[1] != "@!@":
-					print("Song found in node with id: ",green(response.text.split(" ")[0]))
-					print("Song value: " + green(response.text.split(" ")[1]))
-				else:
-					print(yellow("Song doesnt exist in the Chord"))
-			except:
-				print(red("Could not establish connection with Node. Couldnt search for song..."))
-				print(red("Unfortunately exiting..."))
-				exit(0)
+			if fetch_a['key'] == "*":
+				print(cyan("Fetching all the songs of the Chord..."))
+				try:
+					response = requests.get(baseURL + ends.c_query_star)
+					if response.status_code == 200 and response.text.split(" ")[1] != "@!@":
+						print("Song found in node with id: ",green(response.text.split(" ")[0]))
+						print("Song value: " + green(response.text.split(" ")[1]))
+					else:
+						print(yellow("Song doesnt exist in the Chord"))
+				except:
+					print(red("Could not establish connection with Node. Couldnt search for song..."))
+					print(red("Unfortunately exiting..."))
+					exit(0)
+			else:
+				print(cyan("Searching Song: ") + fetch_a['key'] + cyan("..."))
+				try:
+					response = requests.post(baseURL + ends.c_query ,data={'key':fetch_a['key']})
+					if response.status_code == 200 and response.text.split(" ")[1] != "@!@":
+						print("Song found in node with id: ",green(response.text.split(" ")[0]))
+						print("Song value: " + green(response.text.split(" ")[1]))
+					else:
+						print(yellow("Song doesnt exist in the Chord"))
+				except:
+					print(red("Could not establish connection with Node. Couldnt search for song..."))
+					print(red("Unfortunately exiting..."))
+					exit(0)
 
 			continue
 
@@ -168,25 +184,25 @@ def client(ip, port):
 			continue
 
 		elif method_a == 'Run automated test':
-			print('Select method (s = standard, r = random)')
+			print('Select number of test (1 = insert, 2 = query, 3 = requests)')
 			fetch_q = [
 			{
 				'type': 'input',
-				'name': 'key',
-				'message': 'Method:',
+				'name': 'test_n',
+				'message': 'Test:',
 				'filter': lambda val: str(val)
-			}]
+			}
+			]
 			fetch_a = prompt(fetch_q, style=style)
-			method = fetch_a['key'] if fetch_a['key'] else 's'
-			if method not in ('s', 'r'):
-				print(yellow("Wrong parameter (give 's' or 'r')"))
+			test_number = fetch_a['test_n'] if fetch_a['test_n'] else 's'
+			if test_number not in ('1', '2', '3'):
+				print(yellow("Wrong Test number (give 1, 2 or 3)"))
 				continue
-			print(cyan("Running automated tests with method: ") + method + cyan("..."))
-			# call the module to insert/delete/search songs from one node or from random nodes
-			# depending the 'method'. Then save the output to a txt file with accending version name
-
-
-
+			print(cyan("Running automated test number: ") + test_number + cyan("..."))
+			start_time = time.time()
+			test_trans(test_number)
+			print(green("--- %s seconds ---") % (time.time() - start_time))
+			print(cyan("Done!"))
 			continue
 
 		elif method_a == 'Exit':

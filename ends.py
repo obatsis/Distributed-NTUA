@@ -16,6 +16,9 @@ c_delete = '/cli/delete'
 global c_query	# POST: returns info about the song	{song key}
 c_query = '/cli/query'
 
+global c_query_star # GET: returns every nodes songs (including replicas)
+c_query_star = '/cli/query_star'
+
 global n_overlay # POST: returns node info plus previous overlay info {node id, ip, port}
 n_overlay = '/chord/overlay'
 
@@ -36,3 +39,6 @@ b_join = '/boot/join'
 
 global b_depart # POST: removes node from the Chord {node id, ip, port}
 b_depart = '/boot/depart'
+
+global b_list # GET: returns the list of all nodes (ip:port ip:port ....)
+b_list = '/boot/listNodes'

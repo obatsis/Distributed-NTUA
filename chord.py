@@ -155,6 +155,14 @@ def node_update_list(new_neighbours):
 		print(globs.nids[1])
 	return "new neighbours set"
 
+
+def boot_send_nodes_list():
+	if globs.boot:
+		res = ''
+		for node in globs.mids:
+			res += node["ip"] + ":" + node["port"] + " "
+		print(yellow("Sending nodes: ") + res)
+		return res
 # End Node Functios
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Overlay Functions
@@ -470,17 +478,3 @@ def query_song(args):
 		return "Bad skills"
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-class my_thread(Thread):
-    def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs={}, Verbose=None):
-        Thread.__init__(self, group, target, name, args, kwargs)
-        self._return = None
-    def run(self):
-        print(type(self._target))
-        if self._target is not None:
-            self._return = self._target(*self._args,
-                                                **self._kwargs)
-    def join(self, *args):
-        Thread.join(self, *args)
-        return self._return
