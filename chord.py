@@ -257,6 +257,23 @@ def insert_song(args):
 			if config.vNDEBUG:
 				print(yellow("My songs are now:"))
 				print(globs.songs)
+
+		if (globs.consistency == "eventual" and globs.k != 1):
+			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"], "value":song["value"]}, "chain_length":{"k":globs.k-1}}
+			t = Thread(target=eventual_insert, args=[ploads])
+			t.start()
+			# while not(globs.got_insert_eventual_response): # insert a global -> glos.got_insert_eventual_response
+			# 	if config.NDEBUG:
+			# 		print(yellow("Waiting for insert_eventual respose..."))
+			# 	time.sleep(0.5)
+			# globs.got_insert_eventual_response = False
+			# time.sleep(0.2)
+
+		elif(globs.consistency == "linear" and globs.k != 1):
+			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"], "value":song["value"]}, "chain_length":{"k":globs.k-1}}
+			linear_result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_insert, json = ploads)
+			return "Right node insert song"
+
 		if globs.started_insert:# it means i requested the insertion of the song, and i am responsible for it
 			globs.q_response = song["key"]
 			globs.q_responder = who_is["uid"]
@@ -266,6 +283,7 @@ def insert_song(args):
 				print(cyan("Special case ") + "it was me who made the request and i also have the song")
 				print(yellow("Returning to myself..."))
 			return "sent it to myself"
+
 		try: # send the key of the song to the node who requested the insertion
 			result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_insert, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": song})
 			if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
@@ -300,6 +318,10 @@ def insert_song(args):
 	else :
 		print(red("The key hash didnt match any node...consider thinking again about your skills"))
 		return "Bad skills"
+
+def eventual_insert(ploads):
+    r = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_insert, json = ploads)
+    return r.text
 
 def delete_song(args):
 	song = args["song"]
@@ -339,7 +361,7 @@ def delete_song(args):
 				if config.vNDEBUG:
 					print(yellow("My songs are now:"))
 					print(globs.songs)
-			value = song_to_be_deleted["key"]
+			value = song_to_be_deleted["value"]
 		else:
 			if config.NDEBUG:
 				print(yellow('Cant find song: {}').format(song))
@@ -348,6 +370,22 @@ def delete_song(args):
 					print(yellow("My songs are now:"))
 					print(globs.songs)
 			value = "@!@"
+
+		if (globs.consistency == "eventual" and globs.k != 1):
+			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}, "chain_length":{"k":globs.k-1}}
+			t = Thread(target=eventual_delete, args=[ploads])
+			t.start()
+			# while not(globs.got_insert_eventual_response): # insert a global -> glos.got_insert_eventual_response
+			# 	if config.NDEBUG:
+			# 		print(yellow("Waiting for insert_eventual respose..."))
+			# 	time.sleep(0.5)
+			# globs.got_insert_eventual_response = False
+			# time.sleep(0.2)
+		elif(globs.consistency == "linear" and globs.k != 1):
+			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}, "chain_length":{"k":globs.k-1}}
+			linear_result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_delete, json = ploads)
+			return "Right node delete song"
+
 		if globs.started_delete:# it means i requested the deletion of the song, and i am responsible for it
 			globs.q_response = song_to_be_deleted["value"] if song_to_be_deleted else "@!@"
 			globs.q_responder = who_is["uid"]
@@ -389,6 +427,10 @@ def delete_song(args):
 	else :
 		print(red("The key hash didnt match any node...consider thinking again about your skills"))
 		return "Bad skills"
+
+def eventual_delete(ploads):
+    r = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_delete, json = ploads)
+    return r.text
 
 def query_song(args):
 	song = args["song"]

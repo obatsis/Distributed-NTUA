@@ -40,3 +40,9 @@ global got_insert_response
 got_insert_response = False
 global q_response
 global q_responder
+
+global consistency 
+consistency = "linear"
+
+global k
+k = 3
