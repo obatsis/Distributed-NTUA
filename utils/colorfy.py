@@ -27,6 +27,11 @@ def GREEN(string):
 
 def cyan(string):
 	return '\033[96m {}\033[00m'.format(string)
+def underline(string):
+	return '\033[4m{}\033[00m'.format(string)
+def header(string):
+	return '\033[95m{}\033[00m'.format(string)
+
     # HEADER = '\033[95m'
     # OKBLUE = '\033[94m'
     # OKCYAN = '\033[96m'

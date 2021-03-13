@@ -7,6 +7,7 @@ import config
 from utils.colorfy import *
 from auto.testing import test_trans
 import time
+import json
 style = style_from_dict({
 	Token.QuestionMark: '#E91E63 bold',
 	Token.Selected: '#673AB7 bold',
@@ -112,7 +113,7 @@ def client(ip, port):
 			continue
 
 		elif method_a == 'Search for a Song':
-			print('Insert the Song Title you wish to Search')
+			print('Insert the Song Title you wish to Search or * to get all songs of the Chord')
 			fetch_q = [
 			{
 				'type': 'input',
@@ -126,7 +127,13 @@ def client(ip, port):
 				try:
 					response = requests.get(baseURL + ends.c_query_star)
 					if response.status_code == 200:
-						print( green(response.text.split(" ")[1])
+						nodes_list = json.loads(response.text)
+						# print(green(response.text))
+						# print(cyan()))
+						for node in nodes_list["res"]:
+							print(header("\n" + node["uid"]) + " " + underline(node["ip"] + ":" + node["port"]))
+							for song in node["song"]:
+								print(" -" + green(song["key"]) + " " + song["value"])
 					else:
 						print(yellow("Something went Wrong...") + response.status_code)
 				except:
@@ -200,7 +207,7 @@ def client(ip, port):
 			print(cyan("Running automated test number: ") + test_number + cyan("..."))
 			start_time = time.time()
 			test_trans(test_number)
-			print(green("--- %s seconds ---") % (time.time() - start_time))
+			print(blue("--- %s seconds ---") % (time.time() - start_time))
 			print(cyan("Done!"))
 			continue
 

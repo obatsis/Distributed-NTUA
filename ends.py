@@ -16,7 +16,7 @@ c_delete = '/cli/delete'
 global c_query	# POST: returns info about the song	{song key}
 c_query = '/cli/query'
 
-global c_query_star # POST: returns every node's songs (including replicas) {"result": list_of_dicts}
+global c_query_star # GET: returns every node's songs (including replicas)
 c_query_star = '/cli/query_star'
 
 global n_overlay # POST: returns node info plus previous overlay info {node id, ip, port}
@@ -31,7 +31,10 @@ n_delete = '/chord/delete'
 global n_query 	# POST: returns info about the song	{song key}
 n_query = '/chord/query'
 
-global n_update_peers 	# POST: update node peers list {prev {node id, ip, port}, next {node id, ip, port}}
+global n_query_star # POST: returns every node's songs (including replicas) {"res:" [{"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port, "songs": [globs.songs]}]}
+n_query_star = '/chord/query_star'
+
+global n_update_peers # POST: update node peers list {prev {node id, ip, port}, next {node id, ip, port}}
 n_update_peers = '/chord/updatePeersList'
 
 global b_join	# POST: adds node to the Chord {node id, ip, port}
