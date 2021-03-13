@@ -21,14 +21,15 @@ still_on_chord = True
 global songs	# list of songs saved on a node (contains dicts that look like: {"key": "Song-title, "value": "some value"})
 songs = []
 
-
 #-------------------------------------------------------------------------------------------------------
 # variables for async receiving
-global started_query	# flag that becomes true if a node starts a query (when the operation finishes, it becomes false arain)
+global started_query		# flag that becomes true if a node starts a query (when the operation finishes, it becomes false arain)
 started_query = False
-global started_delete	# flag that becomes true if a node starts a delete (when the operation finishes, it becomes false arain)
+global started_query_star	# flag that becomes true if a node starts a query *(when the operation finishes, it becomes false arain)
+started_query_star = False
+global started_delete		# flag that becomes true if a node starts a delete (when the operation finishes, it becomes false arain)
 started_delete = False
-global started_insert	# flag that becomes true if a node starts an insert (when the operation finishes, it becomes false arain)
+global started_insert		# flag that becomes true if a node starts an insert (when the operation finishes, it becomes false arain)
 started_insert = False
 
 global got_query_response

@@ -121,18 +121,32 @@ def client(ip, port):
 				'filter': lambda val: str(val)
 			}]
 			fetch_a = prompt(fetch_q, style=style)
-			print(cyan("Searching Song: ") + fetch_a['key'] + cyan("..."))
-			try:
-				response = requests.post(baseURL + ends.c_query ,data={'key':fetch_a['key']})
-				if response.status_code == 200 and response.text.split(" ")[1] != "@!@":
-					print("Song found in node with id: ",green(response.text.split(" ")[0]))
-					print("Song value: " + green(response.text.split(" ")[1]))
-				else:
-					print(yellow("Song doesnt exist in the Chord"))
-			except:
-				print(red("Could not establish connection with Node. Couldnt search for song..."))
-				print(red("Unfortunately exiting..."))
-				exit(0)
+			if fetch_a['key'] == "*":
+				print(cyan("Fetching all the songs of the Chord..."))
+				try:
+					response = requests.get(baseURL + ends.c_query_star)
+					if response.status_code == 200 and response.text.split(" ")[1] != "@!@":
+						print("Song found in node with id: ",green(response.text.split(" ")[0]))
+						print("Song value: " + green(response.text.split(" ")[1]))
+					else:
+						print(yellow("Song doesnt exist in the Chord"))
+				except:
+					print(red("Could not establish connection with Node. Couldnt search for song..."))
+					print(red("Unfortunately exiting..."))
+					exit(0)
+			else:
+				print(cyan("Searching Song: ") + fetch_a['key'] + cyan("..."))
+				try:
+					response = requests.post(baseURL + ends.c_query ,data={'key':fetch_a['key']})
+					if response.status_code == 200 and response.text.split(" ")[1] != "@!@":
+						print("Song found in node with id: ",green(response.text.split(" ")[0]))
+						print("Song value: " + green(response.text.split(" ")[1]))
+					else:
+						print(yellow("Song doesnt exist in the Chord"))
+				except:
+					print(red("Could not establish connection with Node. Couldnt search for song..."))
+					print(red("Unfortunately exiting..."))
+					exit(0)
 
 			continue
 
