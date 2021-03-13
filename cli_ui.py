@@ -125,11 +125,10 @@ def client(ip, port):
 				print(cyan("Fetching all the songs of the Chord..."))
 				try:
 					response = requests.get(baseURL + ends.c_query_star)
-					if response.status_code == 200 and response.text.split(" ")[1] != "@!@":
-						print("Song found in node with id: ",green(response.text.split(" ")[0]))
-						print("Song value: " + green(response.text.split(" ")[1]))
+					if response.status_code == 200:
+						print( green(response.text.split(" ")[1])
 					else:
-						print(yellow("Song doesnt exist in the Chord"))
+						print(yellow("Something went Wrong...") + response.status_code)
 				except:
 					print(red("Could not establish connection with Node. Couldnt search for song..."))
 					print(red("Unfortunately exiting..."))

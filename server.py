@@ -92,9 +92,26 @@ def cli_query():
 def query_t(pair):
 	return query_song({"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": pair})
 
-@app.route(ends.c_query_star ,methods = ['GET'])								# cli (client) operation query *
+@app.route(ends.c_query_star ,methods = ['POST'])								# cli (client) operation query *
 def cli_query_star():
-	pass
+	globs.started_query_star = True
+	x = threading.Thread(target=query_star_t ,args = [])
+	x.start()
+	while not(globs.got_query_star_response):
+		if config.NDEBUG:
+			print(yellow("Waiting for query_star respose..."))
+		time.sleep(0.5)
+	globs.got_query_star_response = True
+	if config.NDEBUG:
+		print(yellow("Got response, returning value to cli"))
+	# time.sleep(0.1)
+	# return globs.q_responder + " " + globs.q_response
+	return
+	x.join()
+
+def query_star_t(pair):
+	return query_star_song()
+
 
 @app.route(ends.n_overlay ,methods = ['POST'])									# chord operation network overlay
 def chord_over():

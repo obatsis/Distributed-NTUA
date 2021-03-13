@@ -477,4 +477,6 @@ def query_song(args):
 		print(red("The key hash didnt match any node...consider thinking again about your skills"))
 		return "Bad skills"
 
+def query_star_song():
+	pass
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
