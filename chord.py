@@ -35,7 +35,6 @@ def node_initial_join():
 				print(red("\nexiting..."))
 				exit(0)
 
-
 def bootstrap_join_func(new_node):
 	candidate_id = new_node["uid"]
 	if config.BDEBUG:
@@ -155,7 +154,6 @@ def node_update_list(new_neighbours):
 		print(globs.nids[1])
 	return "new neighbours set"
 
-
 def boot_send_nodes_list():
 	if globs.boot:
 		res = ''
@@ -163,43 +161,42 @@ def boot_send_nodes_list():
 			res += node["ip"] + ":" + node["port"] + " "
 		print(yellow("Sending nodes: ") + res)
 		return res
-# End Node Functios
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# Overlay Functions
-def client_overlay():
-	if globs.still_on_chord:
-		globs.started_overlay = True	# i am the node starting the overlay
-		try:
-			# hit the endpoint /chord/overlay of your next node
-			response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_overlay, data = {"uid": globs.my_id, "ip": globs.my_ip, "port": globs.my_port})
-			if response.status_code == 200:
-				return globs.my_ip + ":" + globs.my_port + " -> " + response.text
-			else :
-				return "Something went wrong while trying to start the overlay   Next node doesnt return properly"
-		except:
-		  return "Node " + globs.nids[1]["uid"] + " is not responding"
 
-def node_overlay(r_node):
-	if globs.still_on_chord:
-		if globs.started_overlay: # it means i am the node who started the overlay
-			globs.started_overlay = False
-			return globs.my_ip + ":" + globs.my_port
+def node_overlay(args):
+	list = args["res"]
+	if globs.started_overlay and list[-1]["uid"] != globs.my_id:
+		# i am the node who started the query * and i am here because the last node sent me the chord song list
 		if config.NDEBUG:
-			print("got a request for overlay from")
-			print(yellow(r_node))
-		try: # hit the endpoint /chord/overlay of your next node
+			print(yellow("Got response from my prev node"))
+			print(yellow("sending him confirmation and returning to cli endpoint"))
+		globs.q_response = args
+		globs.started_overlay = False
+		globs.got_overlay_response = True
+		return "ok to go"
+	if config.NDEBUG:
+		print("Sending my id,ip,port to next and waiting...")
+	try:
+		if globs.started_overlay:
 			if config.NDEBUG:
-				print("sending request for overlay to")
-				print(yellow(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_overlay), )
-			response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_overlay, data = {"uid": globs.my_id, "ip": globs.my_ip, "port": globs.my_port})
-			if response.status_code == 200:
-					return globs.my_ip + ":" + globs.my_port + " -> " + response.text
-			else :
-					return "Something went wrong while trying to start the overlay.... Next node doesent return properly"
-		except:
-		  return "Node " + globs.nids[1]["uid"] + " is not responding"
+				print("I am the first one so i do not append anything")
+		else:
+			dict_to_send = {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}
+			args["res"].append(dict_to_send)
+			if config.vNDEBUG:
+				print(args)
+		result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_overlay, json = args)
+		if result.status_code == 200 and result.text == "ok to go":
+			if config.NDEBUG:
+				print("Got response from next: " + yellow(result.text))
+			return "ok to go"
+		else:
+			print(red("Something went wrong while trying to forward overlay to next"))
+			return "Bad status code: " + result.status_code
+	except:
+		print(red("Next is not responding to my call..."))
+		return "Exception raised while forwarding overlay to next"
 
-#  End Overlay Functions
+# End Node Functios
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Song Functions
 
@@ -545,13 +542,12 @@ def query_song(args):
 
 def query_star_song(args):
 	list = args["res"]
-	print(len(list))
 	if globs.started_query_star and list[-1]["uid"] != globs.my_id:
 		# i am the node who started the query * and i am here because the last node sent me the chord song list
 		if config.NDEBUG:
 			print(yellow("Got response from my prev node"))
 			print(yellow("sending him confirmation and returning to cli endpoint"))
-		globs.q_star_response = args # or args
+		globs.q_star_response = args
 		globs.started_query_star = False
 		globs.got_query_star_response = True
 		return "ok to go"
@@ -578,5 +574,139 @@ def query_star_song(args):
 	except:
 		print(red("Next is not responding to my call..."))
 		return "Exception raised while forwarding query star to next"
+
+def chain_insert_func(data):
+	song_for_chain = data["song"]
+	k = data["chain_length"]["k"]
+	next_ID = globs.nids[1]["uid"]
+	who_is = data["who"]
+	self_ID = globs.my_id
+	song_to_be_inserted = found(song_for_chain["key"])
+	if(song_to_be_inserted):
+		globs.songs.remove(song_to_be_inserted)
+		if config.NDEBUG:
+			print(yellow('Updating song: {}').format(song_to_be_inserted))
+			print(yellow("To song: 	{}").format(song_for_chain))
+			if config.vNDEBUG:
+				print(yellow("My songs are now:"))
+				print(globs.songs)
+	globs.songs.append({"key":song_for_chain["key"], "value":song_for_chain["value"]}) # inserts the (updated) pair of (key,value)
+	if config.NDEBUG:
+		print(yellow('Inserted song: {}').format(song_for_chain))
+		if config.vNDEBUG:
+			print(yellow("My songs are now:"))
+			print(globs.songs)
+	if(k>1):
+		r = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_insert,json = {"who": {"uid" : data["who"]["uid"], "ip":data["who"]["ip"], "port" :data["who"]["port"]}, "song" : {"key":song_for_chain["key"], "value":song_for_chain["value"]}, "chain_length":{"k":k-1}})
+		return r.text
+	else:
+		if globs.consistency == "eventual":
+			return song_for_chain
+		elif globs.consistency == "linear":
+			try: # send the key of the song to the node who requested the insertion
+				globs.last_replica_flag=False
+				if who_is["uid"]==globs.my_id:
+					globs.last_replica_flag=True
+				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_insert, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": song_for_chain})
+				if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
+					if config.NDEBUG:
+						print("Got response from the node who requested the insertion of the song: " + yellow(result.text))
+					return self_ID + song_for_chain["key"]
+				else:
+					print(red("node who requested the insertion of the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
+					return "Bad status code: " + result.status_code
+			except:
+				print(red("node who requested the insertion of the song dindnt respond at all"))
+				return "Exception raised node who requested the insertion of the song dindnt respond"
+		else:
+			print("Not eventual, Not linear")
+			return "something is going wrong"
+
+def chain_delete_func(data):
+	song_for_chain = data["song"]
+	k = data["chain_length"]["k"]
+	who_is = data["who"]
+	next_ID = globs.nids[1]["uid"]
+	self_ID = globs.my_id
+	song_to_be_deleted = found(song_for_chain["key"])
+	if(song_to_be_deleted):
+		globs.songs.remove(song_to_be_deleted)
+		if config.NDEBUG:
+			print(yellow('Deleted song: {}').format(song_for_chain))
+			if config.vNDEBUG:
+				print(yellow("My songs are now:"))
+				print(globs.songs)
+		value = song_to_be_deleted["value"]
+	else:
+		if config.NDEBUG:
+			print(yellow('Cant find song: {}').format(song_for_chain))
+			print(yellow('Unable to delete'))
+			if config.vNDEBUG:
+				print(yellow("My songs are now:"))
+				print(globs.songs)
+		value = "@!@"
+	if(k!=1):
+		r = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_delete,json = {"who": {"uid" : data["who"]["uid"], "ip":data["who"]["ip"], "port" :data["who"]["port"]}, "song" : {"key":song_for_chain["key"]}, "chain_length":{"k":(k-1)}})
+		return r.text
+	else:
+		if globs.consistency == "eventual":
+			return song_for_chain["key"]
+		elif globs.consistency == "linear":
+			try: # send the key of the song to the node who requested the insertion
+				globs.last_replica_flag=False
+				if who_is["uid"]==globs.my_id:
+					globs.last_replica_flag=True
+				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_delete, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song":{"key":song_for_chain["key"],"value":value}})
+				if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
+					if config.NDEBUG:
+						print("Got response from the node who requested the insertion of the song: " + yellow(result.text))
+					return self_ID + value
+				else:
+					print(red("node who requested the insertion of the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
+					return "Bad status code: " + result.status_code
+			except:
+				print(red("node who requested the insertion of the song dindnt respond at all"))
+				return "Exception raised node who requested the insertion of the song dindnt respond"
+		else:
+			print("Not eventual, Not linear")
+			return "something is going wrong"
+
+def chain_query_func(data):
+	song_for_chain = data["song"]
+	who_is = data["who"]
+	next_ID = globs.nids[1]["uid"]
+	self_ID = globs.my_id
+	song_to_be_found = found(song_for_chain["key"])
+
+	if(song_to_be_found and globs.consistency == "linear"):
+		if config.NDEBUG:
+			print(yellow('Found song: {}').format(song_to_be_found))
+			print("Sending the song to the next probable node who may have it and waiting for response...")
+		r = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_query,json = {"who": {"uid" : data["who"]["uid"], "ip":data["who"]["ip"], "port" :data["who"]["port"]}, "song" : {"key":song_for_chain["key"]}})
+		if(r.text == "last_replica"):
+			globs.last_replica_flag=False
+			if who_is["uid"]==globs.my_id:
+				globs.last_replica_flag=True
+			try: # send the value or "@!@" (if the sond doesnt exist) to the node who requested it
+				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": {"key": song_for_chain["key"],"value": song_to_be_found["value"]}})
+				if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
+					if config.NDEBUG:
+						print("Got response from the node who requested the song: " + yellow(result.text))
+					return self_ID + song_to_be_found["value"]
+				else:
+					print(red("node who requested the song respond incorrectly, or something went wrong with the satus code (if it is 200 in prev/next node, he probably responded incorrectly)"))
+					return "Bad status code: " + result.status_code
+			except:
+				print(red("node who requested the song dindnt respond at all"))
+				return "Exception raised node who requested the song dindnt respond"
+		else:
+			return self_ID + song_to_be_found["value"]
+	else: # couldnt find song
+		if config.NDEBUG:
+			print(yellow('Cant find song: {}').format(song_for_chain))
+			print("Informing the previous node who requested it that the last replica of song is in in him and waiting for response...")
+		return "last_replica"
+
+
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

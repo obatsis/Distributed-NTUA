@@ -161,7 +161,13 @@ def client(ip, port):
 			try:
 				response = requests.get(baseURL + ends.c_overlay)
 				if response.status_code == 200:
-					print(green(response.text))
+					nodes_list = json.loads(response.text)
+					print('\n')
+					for node in nodes_list["res"]:
+						print(green(node["ip"] + ":" + node["port"]), end = '')
+						if node != nodes_list["res"][-1]:
+							print(" -> ", end = '')
+					print('\n')
 				else :
 					print(red("Got a bad response status code " + response.status_code))
 			except:
@@ -190,7 +196,7 @@ def client(ip, port):
 			continue
 
 		elif method_a == 'Run automated test':
-			print('Select number of test (1 = insert, 2 = query, 3 = requests)')
+			print('Select which test you wish to run (1 = insert, 2 = query, 3 = requests)')
 			fetch_q = [
 			{
 				'type': 'input',
@@ -202,12 +208,10 @@ def client(ip, port):
 			fetch_a = prompt(fetch_q, style=style)
 			test_number = fetch_a['test_n'] if fetch_a['test_n'] else 's'
 			if test_number not in ('1', '2', '3'):
-				print(yellow("Wrong Test number (give 1, 2 or 3)"))
+				print(yellow("Wrong test number (give 1, 2 or 3)"))
 				continue
-			print(cyan("Running automated test number: ") + test_number + cyan("..."))
-			start_time = time.time()
-			test_trans(test_number)
-			print(blue("--- %s seconds ---") % (time.time() - start_time))
+			print(cyan("Running automated test: ") + ("insert" if test_number == '1' else ("query" if test_number == '2' else "requests")) + cyan("..."))
+			print(blue(test_trans(test_number)))
 			print(cyan("Done!"))
 			continue
 

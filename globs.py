@@ -11,8 +11,6 @@ nids = []		# list of dicts, first element is the previous node and second elemen
 global my_id	# uniqu id of node (result of hashing ip:port)
 global my_ip	# ip of node
 global my_port	# port that Flask is listening
-global started_overlay	# flag that becomes true if a node starts an overlay operation (when the operation finishes, it becomes false arain)
-started_overlay = False
 global still_on_chord	# flag that becomes (and stays) false when a node departs (used to prevent unwanted operation from a departed node)
 still_on_chord = True
 
@@ -23,6 +21,8 @@ songs = []
 
 #-------------------------------------------------------------------------------------------------------
 # variables for async receiving
+global started_overlay	# flag that becomes true if a node starts an overlay operation (when the operation finishes, it becomes false arain)
+started_overlay = False
 global started_query		# flag that becomes true if a node starts a query (when the operation finishes, it becomes false arain)
 started_query = False
 global started_query_star	# flag that becomes true if a node starts a query *(when the operation finishes, it becomes false arain)
@@ -32,6 +32,8 @@ started_delete = False
 global started_insert		# flag that becomes true if a node starts an insert (when the operation finishes, it becomes false arain)
 started_insert = False
 
+global got_overlay_response
+got_overlay_response = False
 global got_query_response
 got_query_response = False
 global got_query_star_response
@@ -44,11 +46,11 @@ global q_response
 global q_star_response
 global q_responder
 
-global consistency	# 'linear' or 'eventual'
-consistency = "eventual"
+global consistency	# 'linear' or 'eventual' or 'none'
+consistency = "linear"
 
 global k	# must be < number of nodes
-k = 1
+k = 5
 
 global last_replica_flag
 last_replica_flag=False

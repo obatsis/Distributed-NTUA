@@ -33,7 +33,8 @@ def test_trans(test_number):
 	if test_number == '1':
 		# run insert.txt
 		infile = open(config.BASE_DIR +"transactions/insert.txt", "r")
-		outfile = open(config.BASE_DIR + 'transactions/outputs/insert_results_' + str(len(nodes)) + '_{}.txt'.format(int(time.time())), "w+")
+		outfile = open(config.BASE_DIR + 'transactions/outputs/insert_nodes=' + str(len(nodes)) + '_k=' + str(config.KAPPA) + '_consistency=' + config.CONSISTENCY + '_{}.txt'.format(int(time.time())), "w+")
+		start_time = time.time()
 		for line in infile.readlines():
 			line = line.strip()
 			parts = line.split(",")
@@ -50,10 +51,12 @@ def test_trans(test_number):
 					print("Error while inserting the song...status code: " + red(response.status.code))
 			except:
 				print(red("\nSomething went wrong!! node doesnt respond"))
+		metric = (time.time() - start_time)/500
 	elif test_number == '2':
 		# run query.txt
 		infile = open(config.BASE_DIR +"transactions/query.txt", "r")
-		outfile = open(config.BASE_DIR + 'transactions/outputs/query_results_' + str(len(nodes)) + '_{}.txt'.format(int(time.time())), "w+")
+		outfile = open(config.BASE_DIR + 'transactions/outputs/query_nodes=' + str(len(nodes)) + '_k=' + str(config.KAPPA) + '_consistency=' + config.CONSISTENCY + '_{}.txt'.format(int(time.time())), "w+")
+		start_time = time.time()
 		for line in infile.readlines():
 			line = line.rstrip("\n")	# remove newline from the end of the string
 			to_node = random.choice(nodes)
@@ -69,10 +72,12 @@ def test_trans(test_number):
 					print("Error while querying the song...status code: " + red(response.status.code))
 			except:
 				print(red("\nSomething went wrong!! node doesnt respond"))
+		metric = (time.time() - start_time)/500
 	elif test_number == '3':
 		# run requests.txt
 		infile = open(config.BASE_DIR +"transactions/requests.txt", "r")
-		outfile = open(config.BASE_DIR + 'transactions/outputs/requests_results_' + str(len(nodes)) + '_{}.txt'.format(int(time.time())), "w+")
+		outfile = open(config.BASE_DIR + 'transactions/outputs/requests_nodes=' + str(len(nodes)) + '_k=' + str(config.KAPPA) + '_consistency=' + config.CONSISTENCY + '_{}.txt'.format(int(time.time())), "w+")
+		start_time = time.time()
 		for line in infile.readlines():
 			line = line.strip()
 			parts = line.split(",")
@@ -104,6 +109,8 @@ def test_trans(test_number):
 						print("Error while querying the song...status code: " + red(response.status.code))
 				except:
 					print(red("\nSomething went wrong!! node doesnt respond"))
+		metric = (time.time() - start_time)/500
 
 	infile.close()
 	outfile.close()
+	return metric
