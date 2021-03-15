@@ -44,11 +44,11 @@ global q_response
 global q_star_response
 global q_responder
 
-global consistency 
-consistency = "linear"
+global consistency	# 'linear' or 'eventual'
+consistency = "eventual"
 
-global k
-k = 3
+global k	# must be < number of nodes
+k = 1
 
 global last_replica_flag
 last_replica_flag=False

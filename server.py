@@ -38,13 +38,12 @@ def cli_insert():
 	x = threading.Thread(target=insert_t ,args = [pair])
 	x.start()
 	while not(globs.got_insert_response):
-		if config.NDEBUG:
+		if config.vNDEBUG:
 			print(yellow("Waiting for insert respose..."))
-		time.sleep(0.1)
+			time.sleep(0.1)
 	globs.got_insert_response = False
-  if config.NDEBUG:
+	if config.NDEBUG:
 		print(yellow("Got response, returning value to cli"))
-	time.sleep(0.15)
 	return globs.q_responder + " " + globs.q_response
 	x.join()
 
@@ -58,13 +57,12 @@ def cli_delete():
 	x = threading.Thread(target=delete_t ,args = [pair])
 	x.start()
 	while not(globs.got_delete_response):
-		if config.NDEBUG:
+		if config.vNDEBUG:
 			print(yellow("Waiting for delete respose..."))
-		time.sleep(0.1)
+			time.sleep(0.1)
 	globs.got_delete_response = False
 	if config.NDEBUG:
 		print(yellow("Got response, returning value to cli"))
-	time.sleep(0.15)
 	return globs.q_responder + " " + globs.q_response
 	x.join()
 
@@ -100,7 +98,7 @@ def chain_insert():
 		elif globs.consistency == "linear":
 			try: # send the key of the song to the node who requested the insertion
 				globs.last_replica_flag=False
-				if who_is["uid"]==globs.my_id:	
+				if who_is["uid"]==globs.my_id:
 					globs.last_replica_flag=True
 				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_insert, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": song_for_chain})
 				if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
@@ -113,7 +111,7 @@ def chain_insert():
 			except:
 				print(red("node who requested the insertion of the song dindnt respond at all"))
 				return "Exception raised node who requested the insertion of the song dindnt respond"
-		else: 
+		else:
 			print("Not eventual, Not linear")
 			return "something is going wrong"
 			#return self_ID + song_for_chain["key"]
@@ -152,7 +150,7 @@ def chain_delete():
 		elif globs.consistency == "linear":
 			try: # send the key of the song to the node who requested the insertion
 				globs.last_replica_flag=False
-				if who_is["uid"]==globs.my_id:	
+				if who_is["uid"]==globs.my_id:
 					globs.last_replica_flag=True
 
 				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_delete, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song":{"key":song_for_chain["key"],"value":value}})
@@ -166,7 +164,7 @@ def chain_delete():
 			except:
 				print(red("node who requested the insertion of the song dindnt respond at all"))
 				return "Exception raised node who requested the insertion of the song dindnt respond"
-		else: 
+		else:
 			print("Not eventual, Not linear")
 			return "something is going wrong"
 			#return self_ID + song_for_chain["key"]
@@ -189,7 +187,7 @@ def chain_query():
 		r = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_query,json = {"who": {"uid" : data["who"]["uid"], "ip":data["who"]["ip"], "port" :data["who"]["port"]}, "song" : {"key":song_for_chain["key"]}})
 		if(r.text == "last_replica"):
 			globs.last_replica_flag=False
-			if who_is["uid"]==globs.my_id:	
+			if who_is["uid"]==globs.my_id:
 				globs.last_replica_flag=True
 			try: # send the value or "@!@" (if the sond doesnt exist) to the node who requested it
 				result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": {"key": song_for_chain["key"],"value": song_to_be_found["value"]}})
@@ -222,13 +220,12 @@ def cli_query():
 	x = threading.Thread(target=query_t ,args = [pair])
 	x.start()
 	while not(globs.got_query_response):
-		if config.NDEBUG:
+		if config.vNDEBUG:
 			print(yellow("Waiting for query respose..."))
-		time.sleep(0.1)
+			time.sleep(0.1)
 	globs.got_query_response = False
 	if config.NDEBUG:
 		print(yellow("Got response, returning value to cli"))
-	time.sleep(0.15)
 	return globs.q_responder + " " + globs.q_response
 	x.join()
 
@@ -241,9 +238,9 @@ def cli_query_star():
 	x = threading.Thread(target=query_star_t ,args = [])
 	x.start()
 	while not(globs.got_query_star_response):
-		if config.NDEBUG:
+		if config.vNDEBUG:
 			print(yellow("Waiting for query_star respose..."))
-		time.sleep(0.1)
+			time.sleep(0.1)
 	globs.got_query_star_response = False
 	if config.NDEBUG:
 		print(yellow("Got response, returning value to cli"))

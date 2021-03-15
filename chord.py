@@ -264,12 +264,6 @@ def insert_song(args):
 			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"], "value":song["value"]}, "chain_length":{"k":globs.k-1}}
 			t = Thread(target=eventual_insert, args=[ploads])
 			t.start()
-			# while not(globs.got_insert_eventual_response): # insert a global -> glos.got_insert_eventual_response
-			# 	if config.NDEBUG:
-			# 		print(yellow("Waiting for insert_eventual respose..."))
-			# 	time.sleep(0.5)
-			# globs.got_insert_eventual_response = False
-			# time.sleep(0.2)
 
 		elif(globs.consistency == "linear" and globs.k != 1):
 			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"], "value":song["value"]}, "chain_length":{"k":globs.k-1}}
@@ -379,12 +373,6 @@ def delete_song(args):
 			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}, "chain_length":{"k":globs.k-1}}
 			t = Thread(target=eventual_delete, args=[ploads])
 			t.start()
-			# while not(globs.got_insert_eventual_response): # insert a global -> glos.got_insert_eventual_response
-			# 	if config.NDEBUG:
-			# 		print(yellow("Waiting for insert_eventual respose..."))
-			# 	time.sleep(0.5)
-			# globs.got_insert_eventual_response = False
-			# time.sleep(0.2)
 		elif(globs.consistency == "linear" and globs.k != 1 and value != "@!@"):
 			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}, "chain_length":{"k":globs.k-1}}
 			linear_result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_delete, json = ploads)
@@ -534,15 +522,6 @@ def query_song(args):
 					print("I am a replica and I have the song")
 					result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_query, json = {"who": who_is, "song": song})
 					globs.last_replica_flag=True
-
-				# 	globs.q_response = song_to_be_found["value"]
-				# 	globs.q_responder = who_is["uid"]
-				# 	globs.started_query = False
-				# 	globs.got_query_response = True
-				# 	if config.NDEBUG:
-				# 		print(cyan("Special case ") + "it was me who made the request and i also have the song")
-				# 		print(yellow("Returning to myself..."))
-				# 	return "I am a the last replica you found to have the song"
 				return "I am a replica and I have the song"
 
 		if config.NDEBUG:
