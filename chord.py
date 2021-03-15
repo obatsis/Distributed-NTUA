@@ -13,7 +13,7 @@ def node_initial_join():
 	if globs.still_on_chord:
 		if not globs.boot:
 			if config.NDEBUG:
-				print(yellow("\natempting to join the Chord..."))
+				print(yellow("\nattempting to join the Chord..."))
 			try:
 				response = requests.post(config.ADDR + config.BOOTSTRAP_IP + ":" + config.BOOTSTRAP_PORT + ends.b_join , data = {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port})
 				if response.status_code == 200:
@@ -214,7 +214,7 @@ def found(key):
 def insert_song(args):
 	song = args["song"]
 	who_is = args["who"]
-	if who_is["uid"] != globs.my_id and globs.started_insert:
+	if (who_is["uid"] != globs.my_id and globs.started_insert) or (globs.started_insert and who_is["uid"] == globs.my_id and globs.last_replica_flag==True):
 		# i am the node who requested the insertion of the song and i am here because the node who has the song sent it to me
 		if config.NDEBUG:
 			print(yellow("Got response directly from the source: ") + who_is["uid"])
@@ -224,6 +224,8 @@ def insert_song(args):
 		globs.q_response = song["key"]
 		globs.started_insert = False
 		globs.got_insert_response = True
+
+		globs.last_replica_flag=False
 		return globs.my_id + " " + song["key"]
 
 	hashed_key = hash(song["key"])
@@ -326,16 +328,18 @@ def eventual_insert(ploads):
 def delete_song(args):
 	song = args["song"]
 	who_is = args["who"]
-	if who_is["uid"] != globs.my_id and globs.started_delete:
+	if (who_is["uid"] != globs.my_id and globs.started_delete) or (globs.started_delete and who_is["uid"] == globs.my_id and globs.last_replica_flag==True):
 		# i am the node who requested the deletion of the song and i am here because the node who has the song sent it to me
 		if config.NDEBUG:
 			print(yellow("Got response directly from the source: ") + who_is["uid"])
 			print(yellow("and it contains: ") + str(song))
 			print(yellow("sending confirmation to source node"))
 		globs.q_responder = who_is["uid"]
-		globs.q_response = song["key"]
+		globs.q_response = song["value"]
 		globs.started_delete = False
 		globs.got_delete_response = True
+
+		globs.last_replica_flag=False
 		return globs.my_id + " " + song["key"]
 
 	hashed_key = hash(song["key"])
@@ -371,7 +375,7 @@ def delete_song(args):
 					print(globs.songs)
 			value = "@!@"
 
-		if (globs.consistency == "eventual" and globs.k != 1):
+		if (globs.consistency == "eventual" and globs.k != 1 and value != "@!@"):
 			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}, "chain_length":{"k":globs.k-1}}
 			t = Thread(target=eventual_delete, args=[ploads])
 			t.start()
@@ -381,7 +385,7 @@ def delete_song(args):
 			# 	time.sleep(0.5)
 			# globs.got_insert_eventual_response = False
 			# time.sleep(0.2)
-		elif(globs.consistency == "linear" and globs.k != 1):
+		elif(globs.consistency == "linear" and globs.k != 1 and value != "@!@"):
 			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}, "chain_length":{"k":globs.k-1}}
 			linear_result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_delete, json = ploads)
 			return "Right node delete song"
@@ -396,7 +400,7 @@ def delete_song(args):
 				print(yellow("Returning to myself..."))
 			return "sent it to myself"
 		try: # send the value (key of the song) or "@!@" (if the sond doesnt exist) to the node who requested the deletion
-			result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_delete, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": {"key": value}})
+			result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_delete, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": {"key":song["key"],"value":value}})
 			if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
 				if config.NDEBUG:
 					print("Got response from the node who requested the deletion of the song: " + yellow(result.text))
@@ -435,7 +439,7 @@ def eventual_delete(ploads):
 def query_song(args):
 	song = args["song"]
 	who_is = args["who"]
-	if who_is["uid"] != globs.my_id and globs.started_query:
+	if (who_is["uid"] != globs.my_id and globs.started_query) or (globs.started_query and who_is["uid"] == globs.my_id and globs.last_replica_flag==True):
 		# i am the node who requested the song and i am here because the node who has the song sent it to me
 		if config.NDEBUG:
 			print(yellow("Got response directly from the source: ") + who_is["uid"])
@@ -445,6 +449,8 @@ def query_song(args):
 		globs.q_response = song["key"]
 		globs.started_query = False
 		globs.got_query_response = True
+
+		globs.last_replica_flag=False
 		return globs.my_id + " " + song["key"]
 
 	hashed_key = hash(song["key"])
@@ -464,6 +470,11 @@ def query_song(args):
 	if(hashed_key > previous_ID and hashed_key <= self_ID and who != 0) or (hashed_key > previous_ID and hashed_key > self_ID and who == 0) or (hashed_key <= self_ID and who == 0):
 		# song is in me
 		song_to_be_found = found(song["key"])
+
+		if(globs.consistency == "linear" and globs.k != 1 and song_to_be_found):
+			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}, "chain_length":{"k":globs.k-1}}
+			linear_result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_query, json = ploads)
+			return "Right node to ask for song"
 
 		if globs.started_query:# it means i requested the song, and i am responsible for it
 			globs.q_response = song_to_be_found["value"] if song_to_be_found else "@!@"
@@ -485,6 +496,7 @@ def query_song(args):
 				print(yellow('Cant find song: {}').format(song))
 				print("Informing the node who requested it that song doesnt exist and waiting for response...")
 			value = "@!@"
+
 		try: # send the value or "@!@" (if the sond doesnt exist) to the node who requested it
 			result = requests.post(config.ADDR + who_is["ip"] + ":" + who_is["port"] + ends.n_query, json = {"who": {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}, "song": {"key": value}})
 			if result.status_code == 200 and result.text.split(" ")[0] == who_is["uid"]:
@@ -500,6 +512,39 @@ def query_song(args):
 
 	elif((hashed_key > self_ID and who != 0) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key <= next_ID and who !=0) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2)):
 		# forward query to next
+
+		if(globs.started_query and globs.consistency == "eventual" and globs.k!=1):# it means i requested the song, but i am not responsible for it
+			song_to_be_found = found(song["key"])
+			if(song_to_be_found):
+				globs.q_response = song_to_be_found["value"]
+				globs.q_responder = who_is["uid"]
+				globs.started_query = False
+				globs.got_query_response = True
+				if config.NDEBUG:
+					print(cyan("Special case ") + "it was me who made the request and i also have the song")
+					print(yellow("Returning to myself..."))
+				return "I am a the first replica you found to have the song"
+		elif(globs.started_query and globs.consistency == "linear" and globs.k!=1):
+			song_to_be_found = found(song["key"])
+			if(song_to_be_found):
+				ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}}
+				linear_result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_query, json = ploads)
+				globs.last_replica_flag=False
+				if linear_result.text == "last_replica":
+					print("I am a replica and I have the song")
+					result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_query, json = {"who": who_is, "song": song})
+					globs.last_replica_flag=True
+
+				# 	globs.q_response = song_to_be_found["value"]
+				# 	globs.q_responder = who_is["uid"]
+				# 	globs.started_query = False
+				# 	globs.got_query_response = True
+				# 	if config.NDEBUG:
+				# 		print(cyan("Special case ") + "it was me who made the request and i also have the song")
+				# 		print(yellow("Returning to myself..."))
+				# 	return "I am a the last replica you found to have the song"
+				return "I am a replica and I have the song"
+
 		if config.NDEBUG:
 			print(yellow('forwarding query to next..'))
 		try:

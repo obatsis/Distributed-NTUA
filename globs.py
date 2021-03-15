@@ -46,3 +46,6 @@ consistency = "linear"
 
 global k
 k = 3
+
+global last_replica_flag
+last_replica_flag=False
