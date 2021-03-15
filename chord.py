@@ -564,4 +564,40 @@ def query_song(args):
 		print(red("The key hash didnt match any node...consider thinking again about your skills"))
 		return "Bad skills"
 
+def query_star_song(args):
+	list = args["res"]
+	print(len(list))
+	if globs.started_query_star and list[-1]["uid"] != globs.my_id:
+		# i am the node who started the query * and i am here because the last node sent me the chord song list
+		if config.NDEBUG:
+			print(yellow("Got response from my prev node"))
+			print(yellow("sending him confirmation and returning to cli endpoint"))
+		globs.q_star_response = args # or args
+		globs.started_query_star = False
+		globs.got_query_star_response = True
+		return "ok to go"
+	if config.NDEBUG:
+		print("Sending my songs list to next and waiting...")
+	try:
+		if globs.started_query_star:
+			if config.NDEBUG:
+				print("I am the first one so i do not append anything")
+		else:
+			dict_to_send = {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port}
+			dict_to_send["song"] = globs.songs
+			args["res"].append(dict_to_send)
+			if config.vNDEBUG:
+				print(args)
+		result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_query_star, json = args)
+		if result.status_code == 200 and result.text == "ok to go":
+			if config.NDEBUG:
+				print("Got response from next: " + yellow(result.text))
+			return "ok to go"
+		else:
+			print(red("Something went wrong while trying to forward query to next"))
+			return "Bad status code: " + result.status_code
+	except:
+		print(red("Next is not responding to my call..."))
+		return "Exception raised while forwarding query star to next"
+
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

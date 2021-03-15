@@ -34,11 +34,14 @@ started_insert = False
 
 global got_query_response
 got_query_response = False
+global got_query_star_response
+got_query_star_response = False
 global got_delete_response
 got_delete_response = False
 global got_insert_response
 got_insert_response = False
 global q_response
+global q_star_response
 global q_responder
 
 global consistency 
