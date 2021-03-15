@@ -45,3 +45,12 @@ b_depart = '/boot/depart'
 
 global b_list # GET: returns the list of all nodes (ip:port ip:port ....)
 b_list = '/boot/listNodes'
+
+global chain_insert
+chain_insert = '/chord/chain_insert'
+
+global chain_delete
+chain_delete = '/chord/chain_delete'
+
+global chain_query
+chain_query = '/chord/chain_query'

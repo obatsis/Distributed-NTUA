@@ -43,3 +43,12 @@ got_insert_response = False
 global q_response
 global q_star_response
 global q_responder
+
+global consistency 
+consistency = "linear"
+
+global k
+k = 3
+
+global last_replica_flag
+last_replica_flag=False
