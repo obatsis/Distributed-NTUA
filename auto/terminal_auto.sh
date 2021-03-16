@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-
 gnome-terminal -- bash -c "./server_auto.sh $1"
 gnome-terminal -- bash -c "./cli_auto.sh $1"
 

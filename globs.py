@@ -48,7 +48,7 @@ global consistency	# 'linear' or 'eventual'
 consistency = "eventual"
 
 global k	# must be < number of nodes
-k = 1
+k = 3
 
 global last_replica_flag
 last_replica_flag=False

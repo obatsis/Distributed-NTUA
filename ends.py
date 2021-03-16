@@ -19,6 +19,9 @@ c_query = '/cli/query'
 global c_query_star # GET: returns every node's songs (including replicas)
 c_query_star = '/cli/query_star'
 
+global n_depart	# POST: songs redistribution after departure
+n_depart = '/chord/depart'
+
 global n_overlay # POST: returns node info plus previous overlay info {node id, ip, port}
 n_overlay = '/chord/overlay'
 

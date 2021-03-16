@@ -75,6 +75,15 @@ def cli_depart_func():
 	if globs.still_on_chord:
 		globs.still_on_chord = False	# dont let him enter twice
 		# sending a request to bootsrap saying i want to depart
+
+		print(globs.songs)
+		# ploads = json.dumps(globs.songs)
+		ploads = {"song_list":globs.songs}
+		print(ploads)
+		response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_depart, data = ploads )
+		# t = Thread(target=t_update_depart, args=[ploads])
+		# t.start()
+		print()
 		try:
 			response = requests.post(config.ADDR + config.BOOTSTRAP_IP + ":" + config.BOOTSTRAP_PORT + ends.b_depart, data = {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port})
 			if response.status_code == 200:
@@ -96,6 +105,29 @@ def cli_depart_func():
 			print(red("\nSomething went wrong!! (check if bootstrap is up and running)"))
 			print(red("Cant realy do anything... I will wait"))
 			return "Encountered a problem while trying to leave the Chord...\n Check if Bootstrap is up and running"
+
+def chord_depart_func(data):
+	song_list = data["song_list"]
+	print(song_list)
+	print("Chord depart update songs list")
+	if bool(song_list) == False:
+		for item in song_list:
+			if item not in globs.songs:
+				if config.NDEBUG:
+					print(blue("Insert {} in node with id {}", item, globs.my_id))
+				globs.songs.append({"key":item["key"], "value":item["value"]}) # inserts the (updated) pair of (key,value)
+				print("Song {} with value {} inserted",item["key"],item["value"])
+				song_list.remove({"key":item["key"], "value":item["value"]})
+		response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_depart, data = {"who":{"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port},"song_list":song_list})
+		return response.text
+
+	return "Replication done"
+
+def t_update_depart(ploads):
+	print(ploads)
+	response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_depart, data = ploads)
+	print(response.text)
+	return response
 
 def boot_depart_func(d_node):
 	if globs.boot:

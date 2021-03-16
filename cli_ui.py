@@ -8,6 +8,9 @@ from utils.colorfy import *
 from auto.testing import test_trans
 import time
 import json
+import globs
+import hashlib
+
 style = style_from_dict({
 	Token.QuestionMark: '#E91E63 bold',
 	Token.Selected: '#673AB7 bold',
@@ -16,11 +19,14 @@ style = style_from_dict({
 	Token.Question: '#0bf416 bold',
 })
 
-def client(ip, port):
+def hash(key):
+	return hashlib.sha1(key.encode('utf-8')).hexdigest()
+
+def client(ip, port, my_id):
 	os.system('cls||clear')
 	cyan('What a beautiful day to enter the cult...')
 	baseURL = 'http://' + ip + ':' + port
-
+	
 	while True:
 		print('----------------------------------------------------------------------')
 		method_q = {
@@ -173,7 +179,7 @@ def client(ip, port):
 
 		elif method_a == 'Help':
 			print('-------------------------------- Help --------------------------------\n')
-
+			print("Node id: {}", my_id)
 			overlayHelp="Overlay: This functions recreates and prints the current Network Topology(eg. Node1 -> Node2 -> ...)"
 			insertHelp="Insert Song: This functions expects a Song Title and a Song Value and inserts them in the Chord (eg. )"
 			queryHelp="Search Song: This function expects a Song Title and searches the Node in whitch the song is stored"
@@ -226,4 +232,5 @@ if __name__ == '__main__':
 	if sys.argv[1] in ("-p", "-P"):
 		my_port = sys.argv[2]
 		my_ip = os.popen('ip addr show ' + config.NETIFACE + ' | grep "\<inet\>" | awk \'{ print $2 }\' | awk -F "/" \'{ print $1 }\'').read().strip()
-		client(my_ip, my_port)
+		my_id = hash(my_ip + ":" + my_port)
+		client(my_ip, my_port, my_id)

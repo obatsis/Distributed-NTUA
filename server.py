@@ -31,6 +31,12 @@ def cli_over():
 def cli_depart():
 	return cli_depart_func()
 
+@app.route(ends.n_depart ,methods = ['POST'])									# cli (client) operation depart
+def chord_depart():
+	data = request.get_json()
+	print(data)
+	return chord_depart_func(data)
+
 @app.route(ends.c_insert ,methods = ['POST'])									# cli (client) operation insert
 def cli_insert():
 	pair = request.form.to_dict()
@@ -263,7 +269,6 @@ def chord_over():
 
 @app.route(ends.n_insert ,methods = ['POST'])									# chord operation insert(key.value)
 def chord_insert():
-	print("CHORD N_INSERT HERE")
 	result = request.get_json()
 	return insert_song(result)
 
