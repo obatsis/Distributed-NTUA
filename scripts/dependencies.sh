@@ -20,8 +20,6 @@ fi
 
 
 echo " -------- installing dependecies -------- "
-apt-get install python3
-apt-get install pip3
 pip3 install Flask
 pip3 install requests
 pip3 install PyInquirer
