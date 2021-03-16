@@ -11,7 +11,7 @@ nids = []		# list of dicts, first element is the previous node and second elemen
 global my_id	# uniqu id of node (result of hashing ip:port)
 global my_ip	# ip of node
 global my_port	# port that Flask is listening
-global still_on_chord	# flag that becomes (and stays) false when a node departs (used to prevent unwanted operation from a departed node)
+global still_on_chord	# flag that becomes (and stays) false when a node departs (used to prevent unwanted operations from a departed node)
 still_on_chord = True
 
 # Songs global variables
@@ -47,10 +47,10 @@ global q_star_response
 global q_responder
 
 global consistency	# 'linear' or 'eventual' or 'none'
-consistency = "linear"
+consistency = "none"
 
 global k	# must be < number of nodes
-k = 5
+k = 1
 
 global last_replica_flag
 last_replica_flag=False

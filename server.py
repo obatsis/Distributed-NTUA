@@ -196,14 +196,27 @@ def boot_sendList():
 	return boot_send_nodes_list()
 
 def server():
-	print("\n")
-	if len(sys.argv) < 3:
-		print("!! you must tell me the port. Ex. -p 5000 !!")
-		exit(0)
+	if len(sys.argv) < 7:
+		wrong_input_format()
 	if sys.argv[1] in ("-p", "-P"):
 		globs.my_port = sys.argv[2]
+	else:
+		wrong_input_format()
+	if sys.argv[3] in ("-k", "-K"):
+		globs.k = int(sys.argv[4])
+	else:
+		wrong_input_format()
+	if sys.argv[5] in ("-c", "-C"):
+		if sys.argv[6] in ("linear", "l"):
+			globs.consistency = "linear"
+		elif sys.argv[6] in ("eventual", "e"):
+			globs.consistency = "eventual"
+		else:
+			globs.consistency = "none"
+	else:
+		wrong_input_format()
 	globs.my_ip = os.popen('ip addr show ' + config.NETIFACE + ' | grep "\<inet\>" | awk \'{ print $2 }\' | awk -F "/" \'{ print $1 }\'').read().strip()
-	if len(sys.argv) == 4 and sys.argv[3] in ("-b", "-B"):
+	if len(sys.argv) == 8 and sys.argv[7] in ("-b", "-B"):
 		print("I am the Bootstrap Node with ip: " + yellow(globs.my_ip) + " about to run a Flask server on port "+ yellow(globs.my_port))
 		globs.my_id = hash(globs.my_ip + ":" + globs.my_port)
 		print("and my unique id is: " + green(globs.my_id))
@@ -221,6 +234,11 @@ def server():
 	print("\n\n")
 	app.run(host= globs.my_ip, port=globs.my_port,debug = True, use_reloader=False)
 
+def wrong_input_format():
+	print(red("Argument passing error!"))
+	print(underline("Usage:"))
+	print(cyan("-p port_to_open\n -k replication_factor (<= number of nodes)\n -c consistency_type ((linear,l) or (eventual,e))\n -b for bootstrap node only"))
+	exit(0)
 
 if __name__ == '__main__':
 	server()
