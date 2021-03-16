@@ -6,5 +6,5 @@ if [ $hs = "master" ]; then
 else
 	python3 ~/Distributed-NTUA/server.py -p 5000 -k $1 -c $2 &
 fi
-sleep(1)
+sleep 1
 python3 ~/Distributed-NTUA/server.py -p 5001 -k $1 -c $2 &
