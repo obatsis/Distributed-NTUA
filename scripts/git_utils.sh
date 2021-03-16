@@ -5,9 +5,10 @@ if [ -d "$dir" ]
 then
 	cd Distributed-NTUA
 	echo "fetching..."
-	git fetch
+	git fetch --all
 	echo "Pulling main from repo github.com:obatsis/Distributed-NTUA.git"
-	git pull
+	git reset --hard origin/master
+	git pull origin master
 else
 	echo "Cloning repo github.com:obatsis/Distributed-NTUA.git"
 	git clone https://github.com/obatsis/Distributed-NTUA.git
