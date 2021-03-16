@@ -26,5 +26,5 @@ only to master. Run the script `/scripts/git_pull_nodes.sh` from master.
 It should initially clone this repo to every node, and after that by running
 it again it sould pull main to every node (including master).
 
-7. Now you are ready to sart the ToyChord. Navigate to `/Distributed-NTUA/auto`
-and run the script 'run_vms.sh 10'.
+7. Last step before we are ready to run the application is to install all
+dependecies. In order to do that, simply run `vm_dependencies.sh` script from master.
