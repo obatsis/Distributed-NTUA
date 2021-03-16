@@ -1,5 +1,6 @@
 import os
-import globs
+import utils.globs as globs
+# master public ip: 83.212.74.75
 
 cwd = os.getcwd()	# Get the current working directory (cwd)
 BASE_DIR = cwd[:-4]	# remove auto/

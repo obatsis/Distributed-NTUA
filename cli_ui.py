@@ -2,8 +2,8 @@ import requests
 import os
 from PyInquirer import style_from_dict, Token, prompt
 import sys
-import ends
-import config
+import utils.config as config
+import utils.ends as ends
 from utils.colorfy import *
 from auto.testing import test_trans
 import time

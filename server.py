@@ -5,10 +5,10 @@ import json
 from flask import Flask, request
 import requests
 from chord import *
-import config
 from utils.colorfy import *
-import globs
-import ends
+import utils.globs as globs
+import utils.config as config
+import utils.ends as ends
 import threading
 import time
 app = Flask(__name__)

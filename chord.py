@@ -1,8 +1,8 @@
 import requests
 from utils.colorfy import *
-import globs
-import config
-import ends
+import utils.globs as globs
+import utils.config as config
+import utils.ends as ends
 import hashlib
 import json
 import time

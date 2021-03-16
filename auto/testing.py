@@ -1,7 +1,7 @@
 import requests
-import config
 from utils.colorfy import *
-import ends
+import utils.config as config
+import utils.ends as ends
 import random
 import time
 
