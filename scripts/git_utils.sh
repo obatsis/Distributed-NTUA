@@ -7,8 +7,8 @@ then
 	echo "fetching..."
 	git fetch --all
 	echo "Pulling main from repo github.com:obatsis/Distributed-NTUA.git"
-	git reset --hard origin/master
-	git pull origin master
+	git reset --hard origin/main
+	git pull
 else
 	echo "Cloning repo github.com:obatsis/Distributed-NTUA.git"
 	git clone https://github.com/obatsis/Distributed-NTUA.git
