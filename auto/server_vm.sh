@@ -2,8 +2,8 @@
 hs=$HOSTNAME
 
 if [ $hs = "master" ]; then
-	gnome-terminal --tab -- bash -c "python3 ~/Distributed-NTUA/server.py -p 5000 -k $1 -c $2 -b; exec bash"
+	python3 ~/Distributed-NTUA/server.py -p 5000 -k $1 -c $2 -b &
 else
-	gnome-terminal --tab -- bash -c "python3 ~/Distributed-NTUA/server.py -p 5000 -k $1 -c $2; exec bash"
+	python3 ~/Distributed-NTUA/server.py -p 5000 -k $1 -c $2 &
 fi
-gnome-terminal --tab -- bash -c "python3 ~/Distributed-NTUA/server.py -p 5001 -k $1 -c $2; exec bash"
+python3 ~/Distributed-NTUA/server.py -p 5001 -k $1 -c $2 &
