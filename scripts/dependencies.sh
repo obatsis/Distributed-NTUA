@@ -20,6 +20,7 @@ fi
 
 
 echo " -------- installing dependecies -------- "
+apt-get install gnome-terminal
 pip3 install Flask
 pip3 install requests
 pip3 install PyInquirer
