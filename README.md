@@ -14,5 +14,5 @@ in the chord (local execution).
 ## When you are ready to move your application to okeanos
 1. Follow the instructions in `/help``okeanos_scripts_help.md`
 2. Now you are ready to sart the ToyChord. Navigate to `/Distributed-NTUA/auto`
-and run the script 'run_vms.sh 10' from master. This should setup 10 nodes and
-start the ToyChord.
+and run the script 'run_vms.sh 1 l' from master. This should setup 10 nodes with
+replication factor 1 and linear consistency in the chord (vm execution).
