@@ -27,7 +27,7 @@ do
 		gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 'python3 ~/Distributed-NTUA/server.py -p 5001 -k $1 -c $2; exec bash'"
 	# ssh user@$node "/home/user/Distributed-NTUA/auto/server_vm.sh $1 $2 && exit"
 	else
-		gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 '~/Distributed-NTUA/auto/master_runs_vms.sh $1 $2; exec bash'"
+		gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 '~/Distributed-NTUA/auto/master_runs_vms.sh $1 $2 $node; exec bash'"
 		# gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 'ssh user@$node "~/Distributed-NTUA/server.py -p 5000 -k $1 -c $2; exec bash"'"
 		# gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 'ssh user@$node "~/Distributed-NTUA/server.py -p 5001 -k $1 -c $2; exec bash"'"
 	fi
