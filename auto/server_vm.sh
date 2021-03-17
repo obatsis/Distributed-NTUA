@@ -23,9 +23,7 @@ for node in master node1 node2 node3 node4
 do
 	echo -e '\033[1;91m  Inside node:\033[00m' $node
 	if [ $node = "master" ]; then
-		PROMPT_COMMAND='echo -ne "\033]0;master 5000\007"'
-		gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 'python3 ~/Distributed-NTUA/server.py -p 5000 -k $1 -c $2 -b; exec bash'"
-		PROMPT_COMMAND='echo -ne "\033]0;master 5001\007"'
+		gnome-terminal --title="master 5000" --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 'python3 ~/Distributed-NTUA/server.py -p 5000 -k $1 -c $2 -b; exec bash'"
 		gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 'python3 ~/Distributed-NTUA/server.py -p 5001 -k $1 -c $2; exec bash'"
 	# ssh user@$node "/home/user/Distributed-NTUA/auto/server_vm.sh $1 $2 && exit"
 	else
