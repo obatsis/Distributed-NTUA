@@ -17,7 +17,7 @@ style = style_from_dict({
 })
 
 def client(ip, port):
-	os.system('cls||clear')
+	os.system('clear')
 	cyan('What a beautiful day to enter the cult...')
 	baseURL = 'http://' + ip + ':' + port
 
@@ -37,7 +37,7 @@ def client(ip, port):
 						'Exit']
 		}
 		method_a = prompt(method_q, style=style)['method']
-		os.system('cls||clear')
+		os.system('clear')
 		if method_a == 'Depart from Chord':
 			print(cyan("Preparing Node to depart from Chord..."))
 			try:
@@ -180,17 +180,20 @@ def client(ip, port):
 		elif method_a == 'Help':
 			print('-------------------------------- Help --------------------------------\n')
 
-			overlayHelp="Overlay: This functions recreates and prints the current Network Topology(eg. Node1 -> Node2 -> ...)"
-			insertHelp="Insert Song: This functions expects a Song Title and a Song Value and inserts them in the Chord (eg. )"
-			queryHelp="Search Song: This function expects a Song Title and searches the Node in whitch the song is stored"
-			deleteHelp="deleteHelp"
-			departHelp="departHelp"
+			overlayHelp=header("Overlay: ") + cyan("This functions recreates and prints the current Network Topology(eg. Node1 -> Node2 -> ...)\n")
+			insertHelp=header("Insert Song: ") + cyan("This functions expects a Song Title and a Song Value and inserts them in the Chord\n")
+			queryHelp=header("Search Song: ") + cyan("This function expects a Song Title and returns the Node in whitch the song is stored and the value of the song\n")
+			deleteHelp=header("Delete Song: ") + cyan("This function expects a Song Title and returns the Node who deleted the song\n")
+			departHelp=header("Depart: ") + cyan("This function makes the node connected to this cli leave the Chord\n")
+			autoTests=header("Run automated tests: ") + cyan("This function expects a test number (1=insert, 2=query, 3=requests), runs the test and returns the chord throughput")
+
 
 			print(	" -",overlayHelp,"\n"
 					" -",insertHelp,"\n",
 					"-",queryHelp,"\n",
 					"-",deleteHelp,"\n",
 					"-",departHelp,"\n",
+					"-",autoTests,"\n",
 					)
 
 			continue
@@ -216,11 +219,11 @@ def client(ip, port):
 			continue
 
 		elif method_a == 'Exit':
-			os.system('cls||clear')
+			os.system('clear')
 			break
 
 		else:
-			os.system('cls||clear')
+			os.system('clear')
 			continue
 
 if __name__ == '__main__':
