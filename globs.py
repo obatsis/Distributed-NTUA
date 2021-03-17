@@ -9,7 +9,6 @@ mids = []		# list of dicts, decending uids
 global nids
 nids = []		# list of dicts, first element is the previous node and second element is the next node
 global my_id	# uniqu id of node (result of hashing ip:port)
-global my_ip	# ip of node
 global my_port	# port that Flask is listening
 global started_overlay	# flag that becomes true if a node starts an overlay operation (when the operation finishes, it becomes false arain)
 started_overlay = False
