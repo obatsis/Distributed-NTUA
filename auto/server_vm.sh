@@ -10,7 +10,14 @@
 # python3 ~/Distributed-NTUA/server.py -p 5001 -k $1 -c $2 &
 # # python3 ~/Distributed-NTUA/cli_ui.py -p 5000
 
-
+# $1 is k (replication factor)
+# $2 is consistency type (l,c)
+if [ $# -lt 2 ];then
+	echo -e '\033[1;91m  No arguments where given\033[00m'
+	echo "Please provide 'k' and type of consistency (l,e)"
+	echo "e.g. ./run_local.sh 10 3 l"
+	exit 0
+fi
 
 for node in master node1 node2 node3 node4
 do
@@ -19,6 +26,10 @@ do
 		gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 'python3 ~/Distributed-NTUA/server.py -p 5000 -k $1 -c $2 -b; exec bash'"
 		gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 'python3 ~/Distributed-NTUA/server.py -p 5001 -k $1 -c $2; exec bash'"
 	# ssh user@$node "/home/user/Distributed-NTUA/auto/server_vm.sh $1 $2 && exit"
+	else
+		gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 '~/Distributed-NTUA/auto/master_runs_vms.sh $1 $2; exec bash'"
+		# gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 'ssh user@$node "~/Distributed-NTUA/server.py -p 5000 -k $1 -c $2; exec bash"'"
+		# gnome-terminal --tab -- bash -c "sshpass -p vmm ssh user@83.212.74.75 'ssh user@$node "~/Distributed-NTUA/server.py -p 5001 -k $1 -c $2; exec bash"'"
 	fi
 done
 
