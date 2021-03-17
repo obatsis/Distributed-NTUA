@@ -1,5 +1,12 @@
 #!/bin/bash
-
+# $1 is k (replication factor)
+# $2 is consistency type (l,c)
+if [ $# -lt 3 ];then
+	echo -e '\033[1;91m  No arguments where given\033[00m'
+	echo "Please provide 'number of nodes', 'k' and type of consistency (l,e)"
+	echo "e.g. ./run_local.sh 10 3 l"
+	exit 0
+fi
 gnome-terminal -- bash -c "./server_local.sh $1 $2 $3"
 gnome-terminal -- bash -c "./cli_local.sh $1"
 
