@@ -9,5 +9,4 @@ fi
 
 echo -e '\033[1;91m  Inside node:\033[00m' $3
 ssh user@$3 "python3 ~/Distributed-NTUA/server.py -p 5000 -k $1 -c $2  &"
-# ssh user@$3 "python3 ~/Distributed-NTUA/server.py -p 5001 -k $1 -c $2  &"
 echo -e '\033[1;91m  Raised 1 server on port 5000 \033[00m' $3
