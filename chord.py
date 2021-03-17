@@ -35,6 +35,22 @@ def node_initial_join():
 				print(red("\nexiting..."))
 				exit(0)
 
+def chord_join_list_func(data):
+	node_list = data["node_list"]
+	k = data["k"]
+	new_id = data["new_id"]
+
+	if globs.my_id != new_id:
+		node_list.append(globs.my_id)
+
+	if k>1:
+		response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chord_join_list, json = {"node_list" : node_list, "k": k-1, "new_id":new_id})
+		print(response.json())
+		return response.json()
+	else:
+		return {"node_list":node_list}
+
+# def chord_join_update(data):
 
 def bootstrap_join_func(new_node):
 	candidate_id = new_node["uid"]
@@ -60,30 +76,34 @@ def bootstrap_join_func(new_node):
 	if response_p.status_code == 200 and response_p.text == "new neighbours set":
 		if config.BDEBUG:
 			print(blue("Updated previous neighbour successfully"))
-	else :
+	else:
 		print(RED("Something went wrong while updating previous node list"))
+	print(config.ADDR,next["ip"],":",next["port"],ends.n_update_peers)
 	response_n = requests.post(config.ADDR + next["ip"] + ":" + next["port"] + ends.n_update_peers, json = {"prev" : new_node, "next": next_of_next})
 	if response_n.status_code == 200 and response_n.text == "new neighbours set":
 		if config.BDEBUG:
 			print(blue("Updated next neighbour successfully"))
-	else :
+	else:
 		print(RED("Something went wrong while updating next node list"))
+
+	if config.NDEBUG:
+		print("Master completed join of the node")
+	try:
+		print(config.ADDR, new_node["ip"], ":", new_node["port"], ends.ch_join_procedure)
+		response = requests.post(config.ADDR + new_node["ip"] + ":" + new_node["port"] + ends.ch_join_procedure, data = {}) # json = {"prev":{"uid":prev["uid"],"ip":prev["ip"],"port":prev["port"]},"next": {"uid":next["uid"],"ip":next["ip"],"port":next["port"]}, "length": len(globs.mids)})
+		print(response.text)
+	except:
+		print("Something went wrong with join procedure")
 
 	return prev["uid"] + " " + prev["ip"] + " " + prev["port"] + " " + next["uid"] + " " + next["ip"] + " " + next["port"]
 
 def cli_depart_func():
 	if globs.still_on_chord:
 		globs.still_on_chord = False	# dont let him enter twice
-		# sending a request to bootsrap saying i want to depart
-
-		print(globs.songs)
-		# ploads = json.dumps(globs.songs)
-		ploads = {"song_list":globs.songs}
-		print(ploads)
-		response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_depart, data = ploads )
-		# t = Thread(target=t_update_depart, args=[ploads])
-		# t.start()
-		print()
+		# sending a request to bootsrap saying i want to depart		
+		# response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_depart, json = {"song":globs.songs})
+		t = Thread(target=t_update_depart, args=[{"song":globs.songs}])
+		t.start()
 		try:
 			response = requests.post(config.ADDR + config.BOOTSTRAP_IP + ":" + config.BOOTSTRAP_PORT + ends.b_depart, data = {"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port})
 			if response.status_code == 200:
@@ -107,25 +127,30 @@ def cli_depart_func():
 			return "Encountered a problem while trying to leave the Chord...\n Check if Bootstrap is up and running"
 
 def chord_depart_func(data):
-	song_list = data["song_list"]
+	song_list = data["song"]
 	print(song_list)
+	print("My globs.songs :", globs.songs)
 	print("Chord depart update songs list")
-	if bool(song_list) == False:
+	if song_list:
+		print("if song_list:")
 		for item in song_list:
+			print(item)
+			print("for item in song_list[song]:")
 			if item not in globs.songs:
+				print("if item not in globs.songs:")
 				if config.NDEBUG:
-					print(blue("Insert {} in node with id {}", item, globs.my_id))
-				globs.songs.append({"key":item["key"], "value":item["value"]}) # inserts the (updated) pair of (key,value)
-				print("Song {} with value {} inserted",item["key"],item["value"])
+					print("Insert ", item, " in node with id ", globs.my_id)
+				globs.songs.append(item) # inserts the (updated) pair of (key,value)
+				print("Song ", item["key"], " with value ", item["value"], " inserted")
 				song_list.remove({"key":item["key"], "value":item["value"]})
-		response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_depart, data = {"who":{"uid" : globs.my_id, "ip": globs.my_ip, "port" : globs.my_port},"song_list":song_list})
+		response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_depart, json = {"song":song_list})
+
 		return response.text
 
 	return "Replication done"
 
 def t_update_depart(ploads):
-	print(ploads)
-	response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_depart, data = ploads)
+	response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.n_depart, json = ploads)
 	print(response.text)
 	return response
 
@@ -292,12 +317,12 @@ def insert_song(args):
 				print(yellow("My songs are now:"))
 				print(globs.songs)
 
-		if (globs.consistency == "eventual" and globs.k != 1):
+		if (globs.replication == "eventual" and globs.k != 1):
 			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"], "value":song["value"]}, "chain_length":{"k":globs.k-1}}
 			t = Thread(target=eventual_insert, args=[ploads])
 			t.start()
 
-		elif(globs.consistency == "linear" and globs.k != 1):
+		elif(globs.replication == "linear" and globs.k != 1):
 			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"], "value":song["value"]}, "chain_length":{"k":globs.k-1}}
 			linear_result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_insert, json = ploads)
 			return "Right node insert song"
@@ -401,11 +426,11 @@ def delete_song(args):
 					print(globs.songs)
 			value = "@!@"
 
-		if (globs.consistency == "eventual" and globs.k != 1 and value != "@!@"):
+		if (globs.replication == "eventual" and globs.k != 1 and value != "@!@"):
 			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}, "chain_length":{"k":globs.k-1}}
 			t = Thread(target=eventual_delete, args=[ploads])
 			t.start()
-		elif(globs.consistency == "linear" and globs.k != 1 and value != "@!@"):
+		elif(globs.replication == "linear" and globs.k != 1 and value != "@!@"):
 			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}, "chain_length":{"k":globs.k-1}}
 			linear_result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_delete, json = ploads)
 			return "Right node delete song"
@@ -491,7 +516,7 @@ def query_song(args):
 		# song is in me
 		song_to_be_found = found(song["key"])
 
-		if(globs.consistency == "linear" and globs.k != 1 and song_to_be_found):
+		if(globs.replication == "linear" and globs.k != 1 and song_to_be_found):
 			ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}, "chain_length":{"k":globs.k-1}}
 			linear_result = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_query, json = ploads)
 			return "Right node to ask for song"
@@ -533,7 +558,7 @@ def query_song(args):
 	elif((hashed_key > self_ID and who != 0) or (hashed_key > self_ID and hashed_key < previous_ID and who == 0) or (hashed_key <= next_ID and who !=0) or (hashed_key <= previous_ID and hashed_key > next_ID and who == 2)):
 		# forward query to next
 
-		if(globs.started_query and globs.consistency == "eventual" and globs.k!=1):# it means i requested the song, but i am not responsible for it
+		if(globs.started_query and globs.replication == "eventual" and globs.k!=1):# it means i requested the song, but i am not responsible for it
 			song_to_be_found = found(song["key"])
 			if(song_to_be_found):
 				globs.q_response = song_to_be_found["value"]
@@ -544,7 +569,7 @@ def query_song(args):
 					print(cyan("Special case ") + "it was me who made the request and i also have the song")
 					print(yellow("Returning to myself..."))
 				return "I am a the first replica you found to have the song"
-		elif(globs.started_query and globs.consistency == "linear" and globs.k!=1):
+		elif(globs.started_query and globs.replication == "linear" and globs.k!=1):
 			song_to_be_found = found(song["key"])
 			if(song_to_be_found):
 				ploads = {"who": {"uid" : who_is["uid"], "ip": who_is["ip"], "port" : who_is["port"]},"song":{"key":song["key"]}}

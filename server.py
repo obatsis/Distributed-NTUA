@@ -99,9 +99,9 @@ def chain_insert():
 		r = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_insert,json = {"who": {"uid" : data["who"]["uid"], "ip":data["who"]["ip"], "port" :data["who"]["port"]}, "song" : {"key":song_for_chain["key"], "value":song_for_chain["value"]}, "chain_length":{"k":k-1}})
 		return r.text
 	else:
-		if globs.consistency == "eventual":
+		if globs.replication == "eventual":
 			return song_for_chain
-		elif globs.consistency == "linear":
+		elif globs.replication == "linear":
 			try: # send the key of the song to the node who requested the insertion
 				globs.last_replica_flag=False
 				if who_is["uid"]==globs.my_id:
@@ -151,9 +151,9 @@ def chain_delete():
 		r = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chain_delete,json = {"who": {"uid" : data["who"]["uid"], "ip":data["who"]["ip"], "port" :data["who"]["port"]}, "song" : {"key":song_for_chain["key"]}, "chain_length":{"k":(k-1)}})
 		return r.text
 	else:
-		if globs.consistency == "eventual":
+		if globs.replication == "eventual":
 			return song_for_chain["key"]
-		elif globs.consistency == "linear":
+		elif globs.replication == "linear":
 			try: # send the key of the song to the node who requested the insertion
 				globs.last_replica_flag=False
 				if who_is["uid"]==globs.my_id:
@@ -186,7 +186,7 @@ def chain_query():
 
 	song_to_be_found = found(song_for_chain["key"])
 
-	if(song_to_be_found and globs.consistency == "linear"):
+	if(song_to_be_found and globs.replication == "linear"):
 		if config.NDEBUG:
 			print(yellow('Found song: {}').format(song_to_be_found))
 			print("Sending the song to the next probable node who may have it and waiting for response...")
@@ -302,6 +302,45 @@ def boot_join():
 		print(red("You are not authorized to do this shitt...Therefore you are now DEAD"))
 		exit(0)
 
+@app.route(ends.ch_join_procedure,methods = ['POST'])										# join(nodeID)
+def chord_join_procedure():
+	print("Chord join procedure OK!")
+	return "OK"
+# 	if config.NDEBUG:
+# 		print("chord_join_procedure is staring...")
+# # {"prev":{"uid":prev["uid"],"ip":prev["ip"],"port":prev["port"]},"next": {"uid":next["uid"],"ip":next["ip"],"port":next["port"]}}
+# 	res = request.get_json()
+# 	prev = res["prev"]
+# 	next = res["next"]
+# 	node_number = res["length"]
+
+# 	globs.nids.append({"uid": prev["uid"], "ip": prev["ip"], "port": prev["port"]})
+# 	globs.nids.append({"uid": next["uid"], "ip": next["ip"], "port": next["port"]})
+# 	if config.NDEBUG:
+# 		print(yellow("Previous Node:"))
+# 		print(globs.nids[0])
+# 		print(yellow("Next Node:"))
+# 		print(globs.nids[1])
+
+# 	if globs.k >= node_number:
+# 		if config.NDEBUG:
+# 			print("Node list creation is starting...")
+# 		data = {"node_list":[],"k":globs.k, "new_id":new_id}
+# 		node_list_json = chord_join_list_func(data)
+# 		node_list = node_list_json["node_list"]
+# 		if config.NDEBUG:
+# 			print("Node list created: ",node_list)
+
+# 	if config.NDEBUG:
+# 		print("Join of node completed - Overlay to check")
+
+# 	return "Join Completed"
+
+@app.route(ends.chord_join_list ,methods = ['POST'])									# depart(nodeID)
+def chord_join_list():
+	data = request.get_json()
+	return chord_join_list_func(data)
+
 @app.route(ends.b_depart ,methods = ['POST'])									# depart(nodeID)
 def boot_depart():
 	d_node = request.form.to_dict()
@@ -332,7 +371,8 @@ def server():
 		print("I am a normal Node with ip: " + yellow(globs.my_ip) + " about to run a Flask server on port "+ yellow(globs.my_port))
 		globs.my_id = hash(globs.my_ip + ":" + globs.my_port)
 		print("and my unique id is: " + green(globs.my_id))
-		node_initial_join()
+		x = threading.Thread(target=node_initial_join ,args = [])
+		x.start()
 
 	print("\n\n")
 	app.run(host= globs.my_ip, port=globs.my_port,debug = True, use_reloader=False)
