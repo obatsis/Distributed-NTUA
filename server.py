@@ -302,40 +302,48 @@ def boot_join():
 		print(red("You are not authorized to do this shitt...Therefore you are now DEAD"))
 		exit(0)
 
-@app.route(ends.ch_join_procedure,methods = ['POST'])										# join(nodeID)
+@app.route(ends.chord_join_procedure,methods = ['POST'])										# join(nodeID)
 def chord_join_procedure():
-	print("Chord join procedure OK!")
-	return "OK"
-# 	if config.NDEBUG:
-# 		print("chord_join_procedure is staring...")
-# # {"prev":{"uid":prev["uid"],"ip":prev["ip"],"port":prev["port"]},"next": {"uid":next["uid"],"ip":next["ip"],"port":next["port"]}}
-# 	res = request.get_json()
-# 	prev = res["prev"]
-# 	next = res["next"]
-# 	node_number = res["length"]
+	print(red("Chord join procedure OK!"))
+	if config.NDEBUG:
+		print("chord_join_procedure is staring...")
+	res = request.get_json()
 
-# 	globs.nids.append({"uid": prev["uid"], "ip": prev["ip"], "port": prev["port"]})
-# 	globs.nids.append({"uid": next["uid"], "ip": next["ip"], "port": next["port"]})
-# 	if config.NDEBUG:
-# 		print(yellow("Previous Node:"))
-# 		print(globs.nids[0])
-# 		print(yellow("Next Node:"))
-# 		print(globs.nids[1])
+	prev = res["prev"]
+	next = res["next"]
+	node_number = res["length"]
+	node_list = []
 
-# 	if globs.k >= node_number:
-# 		if config.NDEBUG:
-# 			print("Node list creation is starting...")
-# 		data = {"node_list":[],"k":globs.k, "new_id":new_id}
-# 		node_list_json = chord_join_list_func(data)
-# 		node_list = node_list_json["node_list"]
-# 		if config.NDEBUG:
-# 			print("Node list created: ",node_list)
+	globs.nids.append({"uid": prev["uid"], "ip": prev["ip"], "port": prev["port"]})
+	globs.nids.append({"uid": next["uid"], "ip": next["ip"], "port": next["port"]})
+	if config.NDEBUG:
+		print(yellow("Previous Node:"))
+		print(globs.nids[0])
+		print(yellow("Next Node:"))
+		print(globs.nids[1])
 
-# 	if config.NDEBUG:
-# 		print("Join of node completed - Overlay to check")
+	if globs.k <= node_number:
+		if config.NDEBUG:
+			print("Node list creation is starting...")
+		data = {"node_list":node_list,"k":globs.k, "new_id":globs.my_id}
+		node_list_json = chord_join_list_func(data)
+		node_list = node_list_json["node_list"]
+		if config.NDEBUG:
+			print("Node list created: ",node_list)
 
-# 	return "Join Completed"
+		data = {"node_list":node_list,"new_id":globs.my_id}
+		chord_join_update_post_func(data)
 
+	if config.NDEBUG:
+		print("Join of node completed - Overlay to check")
+
+	return "Join Completed"
+
+@app.route(ends.chord_join_update ,methods = ['POST'])									# depart(nodeID)
+def chord_join_update():
+	res = request.get_json()
+	return chord_join_update_func(res)
+	
 @app.route(ends.chord_join_list ,methods = ['POST'])									# depart(nodeID)
 def chord_join_list():
 	data = request.get_json()

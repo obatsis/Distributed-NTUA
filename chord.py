@@ -35,6 +35,7 @@ def node_initial_join():
 				print(red("\nexiting..."))
 				exit(0)
 
+# Finder of the ids of the previous k nodes, returns a list of ids
 def chord_join_list_func(data):
 	node_list = data["node_list"]
 	k = data["k"]
@@ -43,15 +44,51 @@ def chord_join_list_func(data):
 	if globs.my_id != new_id:
 		node_list.append(globs.my_id)
 
-	if k>1:
-		response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chord_join_list, json = {"node_list" : node_list, "k": k-1, "new_id":new_id})
+	if k>=1:
+		response = requests.post(config.ADDR + globs.nids[0]["ip"] + ":" + globs.nids[0]["port"] + ends.chord_join_list, json = {"node_list" : node_list, "k": k-1, "new_id":new_id})
 		print(response.json())
 		return response.json()
 	else:
 		return {"node_list":node_list}
 
-# def chord_join_update(data):
+# Song redistribution of song in the DHT after join operation of a node
+def chord_join_update_func(res):
+	print("Chord join update function is starting...")
+	node_list = res["node_list"]
+	new_id = res["new_id"]
 
+	song_list_to_send = []
+	for item in globs.songs:
+		hashed_item = hash(item["key"])
+		if ((hashed_item>node_list[-1] or hashed_item<=new_id) and new_id<globs.my_id) or \
+		((hashed_item>node_list[-1] and hashed_item<=new_id) and new_id>globs.my_id):
+			song_list_to_send.append(item)
+			globs.songs.remove(item)
+	node_list.pop()
+
+	if len(node_list) >= 1:
+		t = Thread(target= chord_join_update_post_func,args = [{"node_list":node_list,"new_id":new_id}])
+		t.start()
+	return {"song_list":song_list_to_send}
+
+# Song redistribution of song in the DHT after join operation of a node
+def chord_join_update_post_func(res):
+	print("Chord join update POST function is starting...")
+	node_list = res["node_list"]
+	new_id = res["new_id"]
+	try:
+		response = requests.post(config.ADDR + globs.nids[1]["ip"] + ":" + globs.nids[1]["port"] + ends.chord_join_update, json = {"node_list":node_list, "new_id": new_id})
+		song_list_json = response.json()
+		song_list = song_list_json["song_list"]
+	except:
+		print("Problem with join update song list operation")
+		return "NOT OK"
+
+	for item in song_list:
+		globs.songs.append(item)
+	return "New node songs and replication updated"
+
+# Bootstrap function for join operation of a node in the ToyChord ring network
 def bootstrap_join_func(new_node):
 	candidate_id = new_node["uid"]
 	if config.BDEBUG:
@@ -89,8 +126,7 @@ def bootstrap_join_func(new_node):
 	if config.NDEBUG:
 		print("Master completed join of the node")
 	try:
-		print(config.ADDR, new_node["ip"], ":", new_node["port"], ends.ch_join_procedure)
-		response = requests.post(config.ADDR + new_node["ip"] + ":" + new_node["port"] + ends.ch_join_procedure, data = {}) # json = {"prev":{"uid":prev["uid"],"ip":prev["ip"],"port":prev["port"]},"next": {"uid":next["uid"],"ip":next["ip"],"port":next["port"]}, "length": len(globs.mids)})
+		response = requests.post(config.ADDR + new_node["ip"] + ":" + new_node["port"] + ends.chord_join_procedure, json = {"prev":{"uid":prev["uid"],"ip":prev["ip"],"port":prev["port"]},"next": {"uid":next["uid"],"ip":next["ip"],"port":next["port"]}, "length": len(globs.mids)-1})
 		print(response.text)
 	except:
 		print("Something went wrong with join procedure")
@@ -310,6 +346,7 @@ def insert_song(args):
 				if config.vNDEBUG:
 					print(yellow("My songs are now:"))
 					print(globs.songs)
+		song["value"]=hash(song["key"])
 		globs.songs.append({"key":song["key"], "value":song["value"]}) # inserts the (updated) pair of (key,value)
 		if config.NDEBUG:
 			print(yellow('Inserted song: {}').format(song))

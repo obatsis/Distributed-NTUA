@@ -58,11 +58,11 @@ chain_delete = '/chord/chain_delete'
 global chain_query
 chain_query = '/chord/chain_query'
 
-global ch_join_procedure
-ch_join_procedure = '/chord/procedure'
+global chord_join_procedure
+chord_join_procedure = '/chord/procedure'
 
 global chord_join_list
 chord_join_list = '/chord/list'
 
 global chord_join_update
-chord_join_list = '/chord/update'
+chord_join_update = '/chord/update'
