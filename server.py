@@ -49,6 +49,12 @@ def overlay_t():
 def cli_depart():
 	return cli_depart_func()
 
+@app.route(ends.n_depart ,methods = ['POST'])									# cli (client) operation depart
+def chord_depart():
+	data = request.get_json()
+	print(data)
+	return chord_depart_func(data)
+
 @app.route(ends.c_insert ,methods = ['POST'])									# cli (client) operation insert
 def cli_insert():
 	pair = request.form.to_dict()
@@ -152,7 +158,6 @@ def chord_over():
 
 @app.route(ends.n_insert ,methods = ['POST'])									# chord operation insert(key.value)
 def chord_insert():
-	print("CHORD N_INSERT HERE")
 	result = request.get_json()
 	return insert_song(result)
 
@@ -186,6 +191,53 @@ def boot_join():
 		print(red("You are not authorized to do this shitt...Therefore you are now DEAD"))
 		exit(0)
 
+@app.route(ends.chord_join_procedure,methods = ['POST'])										# join(nodeID)
+def chord_join_procedure():
+	print(red("Chord join procedure OK!"))
+	if config.NDEBUG:
+		print("chord_join_procedure is staring...")
+	res = request.get_json()
+
+	prev = res["prev"]
+	next = res["next"]
+	node_number = res["length"]
+	node_list = []
+
+	globs.nids.append({"uid": prev["uid"], "ip": prev["ip"], "port": prev["port"]})
+	globs.nids.append({"uid": next["uid"], "ip": next["ip"], "port": next["port"]})
+	if config.NDEBUG:
+		print(yellow("Previous Node:"))
+		print(globs.nids[0])
+		print(yellow("Next Node:"))
+		print(globs.nids[1])
+
+	if globs.k <= node_number:
+		if config.NDEBUG:
+			print("Node list creation is starting...")
+		data = {"node_list":node_list,"k":globs.k, "new_id":globs.my_id}
+		node_list_json = chord_join_list_func(data)
+		node_list = node_list_json["node_list"]
+		if config.NDEBUG:
+			print("Node list created: ",node_list)
+
+		data = {"node_list":node_list,"new_id":globs.my_id}
+		chord_join_update_post_func(data)
+
+	if config.NDEBUG:
+		print("Join of node completed - Overlay to check")
+
+	return "Join Completed"
+
+@app.route(ends.chord_join_update ,methods = ['POST'])									# depart(nodeID)
+def chord_join_update():
+	res = request.get_json()
+	return chord_join_update_func(res)
+	
+@app.route(ends.chord_join_list ,methods = ['POST'])									# depart(nodeID)
+def chord_join_list():
+	data = request.get_json()
+	return chord_join_list_func(data)
+
 @app.route(ends.b_depart ,methods = ['POST'])									# depart(nodeID)
 def boot_depart():
 	d_node = request.form.to_dict()
@@ -208,11 +260,11 @@ def server():
 		wrong_input_format()
 	if sys.argv[5] in ("-c", "-C"):
 		if sys.argv[6] in ("linear", "l"):
-			globs.consistency = "linear"
+			globs.replication = "linear"
 		elif sys.argv[6] in ("eventual", "e"):
-			globs.consistency = "eventual"
+			globs.replication = "eventual"
 		else:
-			globs.consistency = "none"
+			globs.replication = "none"
 	else:
 		wrong_input_format()
 	globs.my_ip = os.popen('ip addr show ' + config.NETIFACE + ' | grep "\<inet\>" | awk \'{ print $2 }\' | awk -F "/" \'{ print $1 }\'').read().strip()
@@ -229,7 +281,8 @@ def server():
 		print("I am a normal Node with ip: " + yellow(globs.my_ip) + " about to run a Flask server on port "+ yellow(globs.my_port))
 		globs.my_id = hash(globs.my_ip + ":" + globs.my_port)
 		print("and my unique id is: " + green(globs.my_id))
-		node_initial_join()
+		x = threading.Thread(target=node_initial_join ,args = [])
+		x.start()
 
 	print("\n\n")
 	app.run(host= globs.my_ip, port=globs.my_port,debug = True, use_reloader=False)

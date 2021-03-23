@@ -27,4 +27,4 @@ vBDEBUG = False		# extra verbose debug information for bootstrap operations
 vNDEBUG = False		# extra verbose debug information for node operations
 
 KAPPA = globs.k
-CONSISTENCY = globs.consistency
+CONSISTENCY = globs.replication

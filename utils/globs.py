@@ -46,8 +46,8 @@ global q_response
 global q_star_response
 global q_responder
 
-global consistency	# 'linear' or 'eventual' or 'none'
-consistency = "none"
+global replication	# 'linear' or 'eventual' or 'none'
+replication = "none"
 
 global k	# must be < number of nodes
 k = 1
