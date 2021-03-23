@@ -1,0 +1,28 @@
+Πειράματα:
+
+1. Insert
+k=1, replication = none -> 0.06338753795623779
+
+k=3, replication = eventual -> 0.06773854637145996
+
+k=3, replication = linear -> 0.08237668704986573
+
+k=5, replication = eventual -> 0.06613232612609864
+
+k=5, replication = linear -> 0.09486845874786377
+
+
+2. Query
+k=1, replication = none -> 0.06284793043136597
+
+k=3, replication = eventual -> 0.049503486633378
+
+k=3, replication = linear -> 0.08255746507644653
+
+k=5, replication = eventual -> 0.032268873691558835
+
+k=5, replication = linear -> 0.08278789806365967
+
+3. Requests
+eventual: requests_eventual.txt
+linear: requests_linear.txt
